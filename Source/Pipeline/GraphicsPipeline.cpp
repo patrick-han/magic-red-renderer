@@ -2,8 +2,9 @@
 #include <Shader/Shader.h>
 #include <Vertex/VertexDescriptors.h> // Temp
 #include <Common/RootDir.h>
+#include <Rendering/GfxDevice.h>
 
-GraphicsPipeline::GraphicsPipeline(const GfxDevice& _gfxDevice) : Pipeline(_gfxDevice) {}
+GraphicsPipeline::GraphicsPipeline(const GfxDevice& _gfxDevice) : m_logicalDevice(_gfxDevice) {}
 
 void GraphicsPipeline::BuildPipeline(
     const VkPipelineRenderingCreateInfoKHR* pipelineRenderingCreateInfo,
@@ -121,4 +122,28 @@ void GraphicsPipeline::BuildPipeline(
     vkCreateGraphicsPipelines(m_logicalDevice, {}, 1, &pipelineCreateInfo, nullptr, &m_pipeline);
     vkDestroyShaderModule(m_logicalDevice, vertexShaderModule, nullptr);
     vkDestroyShaderModule(m_logicalDevice, fragmentShaderModule, nullptr);
+}
+
+const VkPipeline& GraphicsPipeline::GetPipelineHandle() const {
+    return m_pipeline;
+}
+
+const VkPipelineLayout& GraphicsPipeline::GetPipelineLayout() const {
+    return m_pipelineLayout;
+}
+
+void GraphicsPipeline::CreatePipelineLayout(
+    std::span<VkPushConstantRange const> pushConstantRanges, 
+    std::span<VkDescriptorSetLayout const> descriptorSetLayouts
+    ) {
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+    pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutCreateInfo.pNext = nullptr;
+    pipelineLayoutCreateInfo.flags = {};
+    pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+    pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();
+    pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
+    pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
+
+    vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
 }

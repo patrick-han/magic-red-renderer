@@ -156,12 +156,12 @@ void BlinnPhongLightingStage::Draw(VkCommandBuffer cmdBuffer, VkDeviceAddress sc
     vkCmdSetViewport(cmdBuffer, 0, 1, &DEFAULT_VIEWPORT_FULLSCREEN);
     vkCmdSetScissor(cmdBuffer, 0, 1, &DEFAULT_SCISSOR_FULLSCREEN);
 
-    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.get_pipeline_handle());
+    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.GetPipelineHandle());
 
     // Bindless descriptor set shared for color pass
     std::array<VkDescriptorSet, 2> descriptorSets = {{m_bindlessDescriptorSet, m_lightingDescriptorSet}}; // TODO:: smelly?
     vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-      m_pipeline.get_pipeline_layout(),
+      m_pipeline.GetPipelineLayout(),
       0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
 
 
@@ -170,12 +170,12 @@ void BlinnPhongLightingStage::Draw(VkCommandBuffer cmdBuffer, VkDeviceAddress sc
     pushConstants.model = glm::mat4(0.0f);
     pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
     pushConstants.materialId = 0;
-    vkCmdPushConstants(cmdBuffer, m_pipeline.get_pipeline_layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
+    vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
     vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
 }
 
 void BlinnPhongLightingStage::Cleanup() {
     vkDestroyDescriptorSetLayout(m_gfxDevice, m_lightingDescriptorSetLayout, nullptr);
-    vkDestroyPipelineLayout(m_gfxDevice, m_pipeline.get_pipeline_layout(), nullptr);
-    vkDestroyPipeline(m_gfxDevice, m_pipeline.get_pipeline_handle(), nullptr);
+    vkDestroyPipelineLayout(m_gfxDevice, m_pipeline.GetPipelineLayout(), nullptr);
+    vkDestroyPipeline(m_gfxDevice, m_pipeline.GetPipelineHandle(), nullptr);
 }

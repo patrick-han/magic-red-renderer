@@ -32,11 +32,11 @@ void GBufferStage::Draw(VkCommandBuffer cmdBuffer, VkDeviceAddress sceneDataBuff
     vkCmdSetViewport(cmdBuffer, 0, 1, &DEFAULT_VIEWPORT_FULLSCREEN);
     vkCmdSetScissor(cmdBuffer, 0, 1, &DEFAULT_SCISSOR_FULLSCREEN);
 
-    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.get_pipeline_handle());
+    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.GetPipelineHandle());
 
     // Bindless descriptor set shared for color pass
     vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-       m_pipeline.get_pipeline_layout(), 
+       m_pipeline.GetPipelineLayout(), 
        0, 1, &m_bindlessDescriptorSet, 0, nullptr);
 
     for(const RenderMeshComponent& renderMeshComponent : renderMeshComponents)
@@ -45,13 +45,13 @@ void GBufferStage::Draw(VkCommandBuffer cmdBuffer, VkDeviceAddress sceneDataBuff
         pushConstants.model = renderMeshComponent.m_transformMatrix;
         pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
         pushConstants.materialId = renderMeshComponent.m_materialId;
-        vkCmdPushConstants(cmdBuffer, m_pipeline.get_pipeline_layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
+        vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
 
         renderMeshComponent.bind_mesh_buffers_and_draw(cmdBuffer, std::span<const VkDescriptorSet>());
     }
 }
 
 void GBufferStage::Cleanup() {
-    vkDestroyPipelineLayout(m_gfxDevice, m_pipeline.get_pipeline_layout(), nullptr);
-    vkDestroyPipeline(m_gfxDevice, m_pipeline.get_pipeline_handle(), nullptr);
+    vkDestroyPipelineLayout(m_gfxDevice, m_pipeline.GetPipelineLayout(), nullptr);
+    vkDestroyPipeline(m_gfxDevice, m_pipeline.GetPipelineHandle(), nullptr);
 }

@@ -1,11 +1,11 @@
 #pragma once
-#include <Pipeline/Pipeline.h>
+#include <span>
 #include <string>
 #include <Vertex/VertexDescriptors.h>
 
 class GfxDevice;
 
-class GraphicsPipeline final : public Pipeline {
+class GraphicsPipeline {
 public:
     GraphicsPipeline(const GfxDevice& _gfxDevice);
     void BuildPipeline(
@@ -18,8 +18,17 @@ public:
         VkExtent2D extent
         );
     ~GraphicsPipeline() = default;
-    // GraphicsPipeline(GraphicsPipeline&) = delete;
-    // GraphicsPipeline& operator=(const GraphicsPipeline&) = delete;
-    // GraphicsPipeline(GraphicsPipeline&&) = delete;
-    // GraphicsPipeline& operator=(GraphicsPipeline&&) = delete;
+    const VkPipeline& GetPipelineHandle() const;
+    const VkPipelineLayout& GetPipelineLayout() const;
+    GraphicsPipeline(const GraphicsPipeline&) = delete;
+    GraphicsPipeline& operator=(const GraphicsPipeline&) = delete;
+private:
+    void CreatePipelineLayout(
+        std::span<VkPushConstantRange const> pushConstantRanges, 
+        std::span<VkDescriptorSetLayout const> descriptorSetLayouts
+        );
+
+    const VkDevice m_logicalDevice;
+    VkPipeline m_pipeline;
+    VkPipelineLayout m_pipelineLayout;
 };
