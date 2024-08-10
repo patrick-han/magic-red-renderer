@@ -1,7 +1,8 @@
 #include <Rendering/Core/Renderer.h>
 
+
 int main() {
-    Renderer renderer;
+    MagicRed::Rendering::Renderer renderer;
 
     renderer.run();
 

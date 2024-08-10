@@ -1,57 +1,60 @@
 #include "GBufferStage.h"
 #include <Rendering/Core/GfxDevice.h>
 #include <Rendering/Mesh/RenderMeshComponent.h>
-#include <Common/Defaults.h>
+#include <Rendering/Core/RenderingDefaults.h>
 
-GBufferStage::GBufferStage(
-    const GfxDevice& _gfxDevice,
-    const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,
-    VkDescriptorSetLayout _bindlessDescriptorSetLayout,
-    VkDescriptorSet _bindlessDescriptorSet)
-    : StageBase(_gfxDevice)
-    , m_bindlessDescriptorSet(_bindlessDescriptorSet)
-    , m_pipeline(m_gfxDevice)
-    {
+namespace MagicRed::Rendering
+{
+    GBufferStage::GBufferStage(
+        const GfxDevice& _gfxDevice,
+        const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,
+        VkDescriptorSetLayout _bindlessDescriptorSetLayout,
+        VkDescriptorSet _bindlessDescriptorSet)
+        : StageBase(_gfxDevice)
+        , m_bindlessDescriptorSet(_bindlessDescriptorSet)
+        , m_pipeline(m_gfxDevice)
+        {
 
-        VertexInputDescription vertexDescription = VertexInputDescription::get_default_vertex_description();
-        std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = {{_bindlessDescriptorSetLayout}};
-        m_pipeline.BuildPipeline(
-            _pipelineRenderingCreateInfo
-            , m_vertexShaderPath, m_fragmentShaderPath
-            , vertexDescription
-            , m_pushConstantRanges
-            , descriptorSetLayouts
-            , m_extent
-            );
+            VertexInputDescription vertexDescription = VertexInputDescription::get_default_vertex_description();
+            std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = {{_bindlessDescriptorSetLayout}};
+            m_pipeline.BuildPipeline(
+                _pipelineRenderingCreateInfo
+                , m_vertexShaderPath, m_fragmentShaderPath
+                , vertexDescription
+                , m_pushConstantRanges
+                , descriptorSetLayouts
+                , m_extent
+                );
+        }
+
+    GBufferStage::~GBufferStage() {}
+
+    void GBufferStage::Draw(VkCommandBuffer cmdBuffer, VkDeviceAddress sceneDataBufferAddress, std::span<RenderMeshComponent> renderMeshComponents) {
+
+        vkCmdSetViewport(cmdBuffer, 0, 1, &DEFAULT_VIEWPORT_FULLSCREEN);
+        vkCmdSetScissor(cmdBuffer, 0, 1, &DEFAULT_SCISSOR_FULLSCREEN);
+
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.GetPipelineHandle());
+
+        // Bindless descriptor set shared for color pass
+        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+        m_pipeline.GetPipelineLayout(), 
+        0, 1, &m_bindlessDescriptorSet, 0, nullptr);
+
+        for(const RenderMeshComponent& renderMeshComponent : renderMeshComponents)
+        {
+            DefaultPushConstants pushConstants;
+            pushConstants.model = renderMeshComponent.m_transformMatrix;
+            pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
+            pushConstants.materialId = renderMeshComponent.m_materialId;
+            vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
+
+            renderMeshComponent.bind_mesh_buffers_and_draw(cmdBuffer, std::span<const VkDescriptorSet>());
+        }
     }
 
-GBufferStage::~GBufferStage() {}
-
-void GBufferStage::Draw(VkCommandBuffer cmdBuffer, VkDeviceAddress sceneDataBufferAddress, std::span<RenderMeshComponent> renderMeshComponents) {
-
-    vkCmdSetViewport(cmdBuffer, 0, 1, &DEFAULT_VIEWPORT_FULLSCREEN);
-    vkCmdSetScissor(cmdBuffer, 0, 1, &DEFAULT_SCISSOR_FULLSCREEN);
-
-    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.GetPipelineHandle());
-
-    // Bindless descriptor set shared for color pass
-    vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-       m_pipeline.GetPipelineLayout(), 
-       0, 1, &m_bindlessDescriptorSet, 0, nullptr);
-
-    for(const RenderMeshComponent& renderMeshComponent : renderMeshComponents)
-    {
-        DefaultPushConstants pushConstants;
-        pushConstants.model = renderMeshComponent.m_transformMatrix;
-        pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
-        pushConstants.materialId = renderMeshComponent.m_materialId;
-        vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
-
-        renderMeshComponent.bind_mesh_buffers_and_draw(cmdBuffer, std::span<const VkDescriptorSet>());
+    void GBufferStage::Cleanup() {
+        vkDestroyPipelineLayout(m_gfxDevice, m_pipeline.GetPipelineLayout(), nullptr);
+        vkDestroyPipeline(m_gfxDevice, m_pipeline.GetPipelineHandle(), nullptr);
     }
-}
-
-void GBufferStage::Cleanup() {
-    vkDestroyPipelineLayout(m_gfxDevice, m_pipeline.GetPipelineLayout(), nullptr);
-    vkDestroyPipeline(m_gfxDevice, m_pipeline.GetPipelineHandle(), nullptr);
 }

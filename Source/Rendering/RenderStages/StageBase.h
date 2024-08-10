@@ -3,16 +3,20 @@
 #include <span>
 #include <vulkan/vulkan.h>
 
-class GfxDevice;
-struct RenderMeshComponent;
 
-class StageBase {
-public:
-    StageBase() = delete;
-    StageBase(const GfxDevice& _gfxDevice);
-    virtual ~StageBase() = 0;
-    virtual void Cleanup() = 0;
+namespace MagicRed::Rendering
+{
+    class GfxDevice;
+    struct RenderMeshComponent;
 
-protected:
-    const GfxDevice& m_gfxDevice;
-};
+    class StageBase {
+    public:
+        StageBase() = delete;
+        StageBase(const GfxDevice& _gfxDevice);
+        virtual ~StageBase() = 0;
+        virtual void Cleanup() = 0;
+
+    protected:
+        const GfxDevice& m_gfxDevice;
+    };
+}

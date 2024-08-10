@@ -1,6 +1,9 @@
 #include <Rendering/Mesh/Mesh.h>
 
-void GPUMesh::cleanup(VmaAllocator allocator) {
-    vertexBuffer.cleanup(allocator);
-    indexBuffer.cleanup(allocator);
+namespace MagicRed::Rendering
+{
+    void GPUMesh::cleanup(VmaAllocator allocator) {
+        vertexBuffer.cleanup(allocator);
+        indexBuffer.cleanup(allocator);
+    }
 }
