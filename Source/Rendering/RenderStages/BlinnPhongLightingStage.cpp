@@ -1,7 +1,7 @@
 #include "BlinnPhongLightingStage.h"
-#include <Rendering/GfxDevice.h>
+#include <Rendering/Core/GfxDevice.h>
 #include <Common/Defaults.h>
-#include <Texture/TextureCache.h>
+#include <Rendering/Texture/TextureCache.h>
 
 
 inline static constexpr std::array<DescriptorSetLayoutBinding, 4> lightingDescriptorBindings {{

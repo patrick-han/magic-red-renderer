@@ -1,6 +1,6 @@
 #pragma once
-#include <Vertex/Vertex.h>
-#include <Wrappers/Buffer.h>
+#include <Rendering/Vertex/Vertex.h>
+#include <Rendering/Buffer/Buffer.h>
 #include <Common/IdTypes.h>
 #include <vector>
 #include <unordered_map>

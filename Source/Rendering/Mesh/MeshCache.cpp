@@ -1,5 +1,5 @@
 #include "MeshCache.h"
-#include <Rendering/GfxDevice.h>
+#include <Rendering/Core/GfxDevice.h>
 
 
 [[nodiscard]] GPUMeshId MeshCache::add_mesh(const GfxDevice& gfxDevice, const CPUMesh& mesh) {

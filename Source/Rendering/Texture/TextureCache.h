@@ -1,8 +1,8 @@
 #pragma once
-#include <Wrappers/Image.h>
+#include <Rendering/Image/Image.h>
 #include <Common/IdTypes.h>
 #include <vector>
-#include <Texture/TextureData.h>
+#include <Rendering/Texture/TextureData.h>
 #include <unordered_map>
 #include <string>
 

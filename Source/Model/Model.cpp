@@ -8,9 +8,9 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <Common/Compiler/Unused.h>
 
 #include "Model.h"
-#include <Texture/TextureCache.h>
-#include <Material/MaterialCache.h>
-#include <Material/Material.h>
+#include <Rendering/Texture/TextureCache.h>
+#include <Rendering/Material/MaterialCache.h>
+#include <Rendering/Material/Material.h>
 #include <vulkan/vulkan.h>
 #include <Common/Log.h>
 #include <span>

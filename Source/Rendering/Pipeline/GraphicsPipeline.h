@@ -1,7 +1,7 @@
 #pragma once
 #include <span>
 #include <string>
-#include <Vertex/VertexDescriptors.h>
+#include <Rendering/Vertex/VertexDescriptors.h>
 
 class GfxDevice;
 

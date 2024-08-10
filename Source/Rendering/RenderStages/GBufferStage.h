@@ -1,9 +1,9 @@
 #pragma once
-#include <Mesh/DefaultPushConstants.h>
-#include <Pipeline/GraphicsPipeline.h>
+#include <Rendering/Mesh/DefaultPushConstants.h>
+#include <Rendering/Pipeline/GraphicsPipeline.h>
 #include <Common/IdTypes.h>
 #include <Common/Config.h>
-#include <Rendering/StageBase.h>
+#include <Rendering/RenderStages/StageBase.h>
 #include <array>
 
 class GfxDevice;

@@ -1,8 +1,8 @@
-#include <Wrappers/Image.h>
-#include <Wrappers/Buffer.h>
+#include <Rendering/Image/Image.h>
+#include <Rendering/Buffer/Buffer.h>
 #include <Common/Log.h>
 #include <vulkan/vk_enum_string_helper.h> // Doesn't work on linux?
-#include <Rendering/GfxDevice.h>
+#include <Rendering/Core/GfxDevice.h>
 
 // Transition all mipmap levels and layers by default
 VkImageSubresourceRange default_image_subresource_range(VkImageAspectFlags aspectMask)

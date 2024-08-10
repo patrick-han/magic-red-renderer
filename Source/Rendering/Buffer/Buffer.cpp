@@ -1,4 +1,4 @@
-#include <Wrappers/Buffer.h>
+#include <Rendering/Buffer/Buffer.h>
 #include <vulkan/vk_enum_string_helper.h> // Doesn't work on linux?
 #include <cassert>
 #include <Common/Log.h>

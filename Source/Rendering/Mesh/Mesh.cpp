@@ -1,4 +1,4 @@
-#include <Mesh/Mesh.h>
+#include <Rendering/Mesh/Mesh.h>
 
 void GPUMesh::cleanup(VmaAllocator allocator) {
     vertexBuffer.cleanup(allocator);

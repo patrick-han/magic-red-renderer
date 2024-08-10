@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Common/IdTypes.h>
-#include <Texture/TextureData.h>
+#include <Rendering/Texture/TextureData.h>
 
 // This point to Ids in a TextureCache
 struct Material {

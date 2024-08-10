@@ -1,5 +1,5 @@
 #pragma once
-#include <Mesh/Mesh.h>
+#include <Rendering/Mesh/Mesh.h>
 #include <Common/IdTypes.h>
 
 class GfxDevice;

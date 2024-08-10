@@ -5,21 +5,21 @@
 #include <vector>
 #include <memory>
 
-#include <Rendering/GfxDevice.h>
-#include <Mesh/MeshCache.h>
-#include <Mesh/RenderMeshComponent.h>
-#include <Mesh/DefaultPushConstants.h>
-#include <Pipeline/GraphicsPipeline.h>
-#include <Texture/TextureCache.h>
-#include <Material/MaterialCache.h>
+#include <Rendering/Core/GfxDevice.h>
+#include <Rendering/Mesh/MeshCache.h>
+#include <Rendering/Mesh/RenderMeshComponent.h>
+#include <Rendering/Mesh/DefaultPushConstants.h>
+#include <Rendering/Pipeline/GraphicsPipeline.h>
+#include <Rendering/Texture/TextureCache.h>
+#include <Rendering/Material/MaterialCache.h>
 #include <Light/PointLight.h>
 #include <Light/DirectionalLight.h>
-#include <Wrappers/Buffer.h>
-#include <Rendering/SceneData.h>
+#include <Rendering/Buffer/Buffer.h>
+#include <Rendering/Core/SceneData.h>
 #include <Common/Config.h>
 
-#include <Rendering/GBufferStage.h>
-#include <Rendering/BlinnPhongLightingStage.h>
+#include <Rendering/RenderStages/GBufferStage.h>
+#include <Rendering/RenderStages/BlinnPhongLightingStage.h>
 
 class SDL_window;
 

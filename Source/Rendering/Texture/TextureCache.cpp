@@ -1,5 +1,5 @@
 #include "TextureCache.h"
-#include <Rendering/GfxDevice.h>
+#include <Rendering/Core/GfxDevice.h>
 
 [[nodiscard]] GPUTextureId TextureCache::add_texture(const GfxDevice& gfxDevice, const TextureLoadingData& texLoadingData, const std::string& textureName) {
     const GPUTextureId textureId = static_cast<uint32_t>(m_gpuTextures.size());

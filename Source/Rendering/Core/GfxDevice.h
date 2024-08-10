@@ -1,15 +1,15 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include <vulkan/vulkan.h>
-#include <Wrappers/Image.h>
-#include <Wrappers/Buffer.h>
-#include <Descriptor/Descriptor.h>
+#include <Rendering/Image/Image.h>
+#include <Rendering/Buffer/Buffer.h>
+#include <Rendering/Descriptor/Descriptor.h>
 #include <set>
-#include <DeletionQueue.h>
 #include <Common/Config.h>
 #include <array>
 
 #include <IncludeHelpers/VmaIncludes.h>
+#include <Common/DeletionQueue.h>
 
 class GfxDevice
 {
@@ -67,7 +67,8 @@ private:
     VkCommandPool m_immediateCommandPool;
 
     // Cleanup
-    DeletionQueue m_mainDeletionQueue; // Contains all deletable vulkan resources except pipelines/pipeline layouts
+    DeletionQueue m_mainDeletionQueue;
+
 
     void create_instance();
     void create_debug_messenger();

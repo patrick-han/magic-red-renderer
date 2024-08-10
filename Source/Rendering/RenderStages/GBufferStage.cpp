@@ -1,6 +1,6 @@
 #include "GBufferStage.h"
-#include <Rendering/GfxDevice.h>
-#include <Mesh/RenderMeshComponent.h>
+#include <Rendering/Core/GfxDevice.h>
+#include <Rendering/Mesh/RenderMeshComponent.h>
 #include <Common/Defaults.h>
 
 GBufferStage::GBufferStage(

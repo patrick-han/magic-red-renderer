@@ -1,8 +1,8 @@
 #pragma once
-#include <Mesh/Mesh.h>
+#include <Rendering/Mesh/Mesh.h>
 #include <Common/IdTypes.h>
-#include <Texture/TextureData.h>
-#include <Material/Material.h>
+#include <Rendering/Texture/TextureData.h>
+#include <Rendering/Material/Material.h>
 #include <filesystem>
 
 class GfxDevice;

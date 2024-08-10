@@ -22,16 +22,15 @@
 
 #include <Camera/Camera.h>
 #include <Common/Log.h>
-#include <DeletionQueue.h>
-#include <Mesh/Mesh.h>
+#include <Rendering/Mesh/Mesh.h>
 #include <Model/Model.h>
 
-#include <Wrappers/Image.h>
-#include <Wrappers/ImageMemoryBarrier.h>
-#include <Wrappers/DynamicRendering.h>
+#include <Rendering/Image/Image.h>
+#include <Rendering/Wrappers/ImageMemoryBarrier.h>
+#include <Rendering/Wrappers/DynamicRendering.h>
 
 #include <Common/Defaults.h>
-#include <Descriptor/Descriptor.h>
+#include <Rendering/Descriptor/Descriptor.h>
 
 #include <IncludeHelpers/ImguiIncludes.h>
 

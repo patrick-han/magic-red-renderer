@@ -1,8 +1,8 @@
-#include <Mesh/RenderMeshComponent.h>
+#include <Rendering/Mesh/RenderMeshComponent.h>
 #include <vulkan/vulkan.h>
-#include <Pipeline/GraphicsPipeline.h>
+#include <Rendering/Pipeline/GraphicsPipeline.h>
 #include <glm/glm.hpp>
-#include <Mesh/MeshCache.h>
+#include <Rendering/Mesh/MeshCache.h>
 
 RenderMeshComponent::RenderMeshComponent(const GPUMeshId _GPUmeshId, const MeshCache& _meshCache, glm::mat4 _transformMatrix) :
     m_GPUmeshId(_GPUmeshId)
