@@ -167,167 +167,191 @@ namespace MagicRed::Asset
         }
         if(mesh->mMaterialIndex >= 0)
         {
-            aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-            MagicRed::Rendering::Material meshMaterial;
-
-            unsigned int materialDiffuseCount = material->GetTextureCount(aiTextureType_BASE_COLOR);
-            unsigned int materialMetallicRoughnessCount = material->GetTextureCount(aiTextureType_METALNESS);
-            unsigned int materialNormalCount = material->GetTextureCount(aiTextureType_NORMALS);
-            unsigned int materialEmissiveCount = material->GetTextureCount(aiTextureType_EMISSIVE);
-
-            aiColor4D aiColor;
-            if (material->Get(AI_MATKEY_BASE_COLOR, aiColor) == AI_SUCCESS)
+            if (m_sceneMaterialsAlreadyLoaded.count(mesh->mMaterialIndex) > 0)
             {
-                for (MagicRed::Rendering::Vertex& vertex : cpuMesh.m_vertices)
-                {
-                    vertex.color = glm::vec4(aiColor.r, aiColor.g, aiColor.b, aiColor.a);
-                }
+                cpuMesh.m_materialId = m_sceneMaterialsAlreadyLoaded.at(mesh->mMaterialIndex);
             }
             else
             {
-                for (MagicRed::Rendering::Vertex& vertex : cpuMesh.m_vertices)
+                aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+                MagicRed::Rendering::Material meshMaterial;
+
+                unsigned int materialDiffuseCount = material->GetTextureCount(aiTextureType_BASE_COLOR);
+                unsigned int materialMetallicRoughnessCount = material->GetTextureCount(aiTextureType_METALNESS);
+                unsigned int materialNormalCount = material->GetTextureCount(aiTextureType_NORMALS);
+                unsigned int materialEmissiveCount = material->GetTextureCount(aiTextureType_EMISSIVE);
+
+                aiColor4D aiColor;
+                if (material->Get(AI_MATKEY_BASE_COLOR, aiColor) == AI_SUCCESS)
                 {
-                    vertex.color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta fallback
+                    for (MagicRed::Rendering::Vertex& vertex : cpuMesh.m_vertices)
+                    {
+                        vertex.color = glm::vec4(aiColor.r, aiColor.g, aiColor.b, aiColor.a);
+                    }
                 }
-            }
-            
-
-            // ai_real floatFactor;
-            float metallicFactor;
-            material->Get(AI_MATKEY_METALLIC_FACTOR, metallicFactor);
-            //float metallicFactor = *floatFactor;
-            //UNUSED(metallicFactor);
-
-            // material->Get(AI_MATKEY_ROUGHNESS_FACTOR, floatFactor);
-            // float roughnessFactor;
-
-            // material->Get(AI_MATKEY_EMISSIVE);
-            // glm::vec3 emissiveFactor;
-
-
-            //float normalScale;
-
-            if (m_texturesEmbedded) // .glb for example
-            {
+                else
+                {
+                    for (MagicRed::Rendering::Vertex& vertex : cpuMesh.m_vertices)
+                    {
+                        vertex.color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta fallback
+                    }
+                }
                 
-                // const bool isCompressed = texture->mHeight == 0 ? true : false;
-                // if (isCompressed)
-                if (materialDiffuseCount > 0)
-                {
-                    load_embedded_texture_data(material, scene, aiTextureType_BASE_COLOR, meshMaterial);   
-                }
-                else
-                {
-                    meshMaterial.diffuseTextureId = m_textureCache.get_texture_id(missingDiffuseTextureName);
-                }
-                // else
-                // {
-                //     MRCERR("Uncompressed texture, what do?");
-                //     exit(1);
-                // }
-
-                if (materialMetallicRoughnessCount > 0)
-                {
-                    load_embedded_texture_data(material, scene, aiTextureType_METALNESS, meshMaterial);
-                }
-                else
-                {
-                    meshMaterial.metallicRoughnessTextureId = m_textureCache.get_texture_id(default1TextureName);
-                }
-
-                if (materialNormalCount > 0)
-                {
-                    load_embedded_texture_data(material, scene, aiTextureType_NORMALS, meshMaterial);
-                }
-                else
-                {
-                    meshMaterial.normalTextureId = m_textureCache.get_texture_id(default1TextureName);
-                }
-
-                if (materialEmissiveCount > 0)
-                {
-                    load_embedded_texture_data(material, scene, aiTextureType_EMISSIVE, meshMaterial);
-                }
-                else
-                {
-                    meshMaterial.emissiveTextureId = m_textureCache.get_texture_id(default1TextureName);
-                }
-
-
-            }
-            else
-            {
-                // TODO: When can a material have multiple textures of type diffuse?
-
-                // TODO: Right now this CPUModel class is directly uploading the textures as it parses the assimp data structure, which doesn't
-                // necessarily follow the spirit of the class name.
-                // Better possibly would be to store the texture data and queue uploading jobs after the fact, along with uploading the mesh data.
-
-                // From the glTF 2.0 spec: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material
-
-                // "The value for each property MAY be defined using factors and/or textures (e.g., baseColorTexture and baseColorFactor). If a texture is not given, all respective texture components within this material model MUST be assumed to have a value of 1.0. If both factors and textures are present, the factor value acts as a linear multiplier for the corresponding texture values."
 
                 // {
-                // "materials": [
+                //     aiColor4D baseColorFactor;
+                //     if(material->Get(AI_MATKEY_BASE_COLOR, baseColorFactor) == aiReturn_SUCCESS)
                 //     {
-                //         "name": "Material0",
-                //         "pbrMetallicRoughness": {
-                //             "baseColorFactor": [ 0.5, 0.5, 0.5, 1.0 ],
-                //             "baseColorTexture": {
-                //                 "index": 1,
-                //                 "texCoord": 1
-                //             },
-                //             "metallicFactor": 1,
-                //             "roughnessFactor": 1,
-                //             "metallicRoughnessTexture": {
-                //                 "index": 2,
-                //                 "texCoord": 1
-                //             }
-                //         },
-                //         "normalTexture": {
-                //             "scale": 2,
-                //             "index": 3,
-                //             "texCoord": 1
-                //         },
-                //         "emissiveFactor": [ 0.2, 0.1, 0.0 ]
+                //         meshMaterial.baseColorFactor = glm::vec4(baseColorFactor.r, baseColorFactor.g, baseColorFactor.b, baseColorFactor.a);
                 //     }
-                // ]
+                // }
+                // {
+                //     float metallicFactor;
+                //     if(material->Get(AI_MATKEY_METALLIC_FACTOR, metallicFactor) == aiReturn_SUCCESS)
+                //     {
+                //         meshMaterial.metallicFactor = metallicFactor;
+                //     }
+                // }
+                // {
+                //     float roughnessFactor;
+                //     if(material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughnessFactor) == aiReturn_SUCCESS)
+                //     {
+                //         meshMaterial.roughnessFactor = roughnessFactor;
+                //     }
+                // }
+                // {
+                //     aiColor3D emissiveFactor;
+                //     if(material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveFactor) == aiReturn_SUCCESS)
+                //     {
+                //         meshMaterial.emissiveFactor = glm::vec3(emissiveFactor.r, emissiveFactor.g, emissiveFactor.b);
+                //     }
                 // }
 
-                if (materialDiffuseCount > 0)
+                //float normalScale;
+
+                if (m_texturesEmbedded) // .glb for example
                 {
-                    load_texture_from_filename(material, aiTextureType_BASE_COLOR, meshMaterial);
+                    
+                    // const bool isCompressed = texture->mHeight == 0 ? true : false;
+                    // if (isCompressed)
+                    if (materialDiffuseCount > 0)
+                    {
+                        load_embedded_texture_data(material, scene, aiTextureType_BASE_COLOR, meshMaterial);   
+                    }
+                    else
+                    {
+                        meshMaterial.diffuseTextureId = m_textureCache.get_texture_id(missingDiffuseTextureName);
+                    }
+                    // else
+                    // {
+                    //     MRCERR("Uncompressed texture, what do?");
+                    //     exit(1);
+                    // }
+
+                    if (materialMetallicRoughnessCount > 0)
+                    {
+                        load_embedded_texture_data(material, scene, aiTextureType_METALNESS, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.metallicRoughnessTextureId = m_textureCache.get_texture_id(default1TextureName);
+                    }
+
+                    if (materialNormalCount > 0)
+                    {
+                        load_embedded_texture_data(material, scene, aiTextureType_NORMALS, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.normalTextureId = m_textureCache.get_texture_id(default1TextureName);
+                    }
+
+                    if (materialEmissiveCount > 0)
+                    {
+                        load_embedded_texture_data(material, scene, aiTextureType_EMISSIVE, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.emissiveTextureId = m_textureCache.get_texture_id(default1TextureName);
+                    }
+
+
                 }
                 else
                 {
-                    meshMaterial.diffuseTextureId = m_textureCache.get_texture_id(missingDiffuseTextureName);
+                    // TODO: When can a material have multiple textures of type diffuse?
+
+                    // TODO: Right now this CPUModel class is directly uploading the textures as it parses the assimp data structure, which doesn't
+                    // necessarily follow the spirit of the class name.
+                    // Better possibly would be to store the texture data and queue uploading jobs after the fact, along with uploading the mesh data.
+
+                    // From the glTF 2.0 spec: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material
+
+                    // "The value for each property MAY be defined using factors and/or textures (e.g., baseColorTexture and baseColorFactor). If a texture is not given, all respective texture components within this material model MUST be assumed to have a value of 1.0. If both factors and textures are present, the factor value acts as a linear multiplier for the corresponding texture values."
+
+                    // {
+                    // "materials": [
+                    //     {
+                    //         "name": "Material0",
+                    //         "pbrMetallicRoughness": {
+                    //             "baseColorFactor": [ 0.5, 0.5, 0.5, 1.0 ],
+                    //             "baseColorTexture": {
+                    //                 "index": 1,
+                    //                 "texCoord": 1
+                    //             },
+                    //             "metallicFactor": 1,
+                    //             "roughnessFactor": 1,
+                    //             "metallicRoughnessTexture": {
+                    //                 "index": 2,
+                    //                 "texCoord": 1
+                    //             }
+                    //         },
+                    //         "normalTexture": {
+                    //             "scale": 2,
+                    //             "index": 3,
+                    //             "texCoord": 1
+                    //         },
+                    //         "emissiveFactor": [ 0.2, 0.1, 0.0 ]
+                    //     }
+                    // ]
+                    // }
+
+                    if (materialDiffuseCount > 0)
+                    {
+                        load_texture_from_filename(material, aiTextureType_BASE_COLOR, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.diffuseTextureId = m_textureCache.get_texture_id(missingDiffuseTextureName);
+                    }
+                    if (materialMetallicRoughnessCount > 0)
+                    {
+                        load_texture_from_filename(material, aiTextureType_METALNESS, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.metallicRoughnessTextureId = m_textureCache.get_texture_id(default1TextureName);
+                    }
+                    if (materialNormalCount > 0)
+                    {
+                        load_texture_from_filename(material, aiTextureType_NORMALS, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.normalTextureId = m_textureCache.get_texture_id(default1TextureName);
+                    }
+                    if (materialEmissiveCount > 0)
+                    {
+                        load_texture_from_filename(material, aiTextureType_EMISSIVE, meshMaterial);
+                    }
+                    else
+                    {
+                        meshMaterial.emissiveTextureId = m_textureCache.get_texture_id(default1TextureName);
+                    }
                 }
-                if (materialMetallicRoughnessCount > 0)
-                {
-                    load_texture_from_filename(material, aiTextureType_METALNESS, meshMaterial);
-                }
-                else
-                {
-                    meshMaterial.metallicRoughnessTextureId = m_textureCache.get_texture_id(default1TextureName);
-                }
-                if (materialNormalCount > 0)
-                {
-                    load_texture_from_filename(material, aiTextureType_NORMALS, meshMaterial);
-                }
-                else
-                {
-                    meshMaterial.normalTextureId = m_textureCache.get_texture_id(default1TextureName);
-                }
-                if (materialEmissiveCount > 0)
-                {
-                    load_texture_from_filename(material, aiTextureType_EMISSIVE, meshMaterial);
-                }
-                else
-                {
-                    meshMaterial.emissiveTextureId = m_textureCache.get_texture_id(default1TextureName);
-                }
+                cpuMesh.m_materialId = m_materialCache.add_material(meshMaterial);
+                m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, cpuMesh.m_materialId);
             }
-            cpuMesh.m_materialId = m_materialCache.add_material(meshMaterial);
         }
         return cpuMesh;
     }

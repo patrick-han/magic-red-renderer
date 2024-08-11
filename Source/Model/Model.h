@@ -12,6 +12,8 @@ struct aiMaterial;
 struct aiString;
 #include <assimp/material.h>
 #include <glm/mat4x4.hpp>
+#include <unordered_map>
+#include <Common/IdTypes.h>
 
 namespace MagicRed::Rendering
 {
@@ -33,6 +35,9 @@ namespace MagicRed::Asset
         bool m_texturesEmbedded;
         const char* m_filePath;
         const std::filesystem::path m_path;
+
+
+        std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
         inline static const std::string missingDiffuseTextureName{"missing_diffuse_texture.png"};
         inline static const std::string default1TextureName{"default_1_texture.png"};

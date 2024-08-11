@@ -1,6 +1,6 @@
 #pragma once
 #include <Common/IdTypes.h>
-#include "Material.h"
+#include <Rendering/Material/Material.h>
 #include <vector>
 
 namespace MagicRed::Rendering
