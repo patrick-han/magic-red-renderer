@@ -39,19 +39,17 @@
 namespace MagicRed::Rendering
 {
     // Frame data
-    int frameNumber = 0;
-    float deltaTime = 0.0f; // Time between current and last frame
-    uint64_t lastFrameTick = 0;
-    uint64_t currentFrameTick = 0;
+    static int frameNumber = 0;
+    static float deltaTime = 0.0f; // Time between current and last frame
+    static uint64_t lastFrameTick = 0;
+    static uint64_t currentFrameTick = 0;
 
     // Camera
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -2.0f);
-    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
-    float cameraSpeed = 0.0f;
-    bool firstMouse = true;
-    float lastX = WINDOW_WIDTH / 2, lastY = WINDOW_HEIGHT / 2; // Initial mouse positions
+    static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -2.0f);
+    static glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    static glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    static Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
+    static float cameraSpeed = 0.0f;
 
     void Renderer::run() {
         initWindow();
@@ -251,16 +249,16 @@ namespace MagicRed::Rendering
         }
 
         {
-        // Sponza mesh
-        MagicRed::Asset::CPUModel sponzaModel(ROOT_DIR "/Assets/Meshes/sponza-gltf/Sponza.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
-        glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
-        //    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(0.0, 0.0, 1.0));
-        glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
-        for (CPUMesh& mesh : sponzaModel.m_cpuMeshes)
-        {
-            GPUMeshId sponzaMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
-            m_sceneRenderMeshComponents.emplace_back(sponzaMeshId, m_MeshCache, translate * scale);
-        }
+            // Sponza mesh
+            MagicRed::Asset::CPUModel sponzaModel(ROOT_DIR "/Assets/Meshes/sponza-gltf/Sponza.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
+            glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
+            //    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(0.0, 0.0, 1.0));
+            glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
+            for (CPUMesh& mesh : sponzaModel.m_cpuMeshes)
+            {
+                GPUMeshId sponzaMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
+                m_sceneRenderMeshComponents.emplace_back(sponzaMeshId, m_MeshCache, translate * scale);
+            }
         }
 
         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
@@ -271,7 +269,7 @@ namespace MagicRed::Rendering
 
         // {
         //     // A beautiful game
-        //     CPUModel beautifulGameModel(ROOT_DIR "/Assets/Meshes/ABeautifulGame/ABeautifulGame.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
+        //     MagicRed::Asset::CPUModel beautifulGameModel(ROOT_DIR "/Assets/Meshes/ABeautifulGame/ABeautifulGame.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
         //     for (CPUMesh& mesh : beautifulGameModel.m_cpuMeshes)
         //     {
         //         GPUMeshId beautifulGameMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
@@ -325,16 +323,6 @@ namespace MagicRed::Rendering
         //         m_sceneRenderMeshComponents.push_back(orientationTestObject);
         //      }
         //  }
-
-        // {
-        //     // Suzanne mesh
-        //     CPUModel suzanneModel(ROOT_DIR "/Assets/Meshes/suzanne.glb", true, m_TextureCache);
-        //     GPUMeshId suzanneMeshId = m_MeshCache.add_mesh(m_GfxDevice, suzanneModel.m_cpuMesh);
-        //     RenderMeshComponent suzanneObject(defaultPipelineId, suzanneMeshId, m_GraphicsPipelineCache, m_MeshCache);
-        //     glm::mat4 monkeyTranslate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
-        //     suzanneObject.set_transform(monkeyTranslate);
-        //     m_sceneRenderMeshComponents.push_back(suzanneObject);
-        // }
 
         {
             // Helmet mesh

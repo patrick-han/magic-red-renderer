@@ -4,6 +4,9 @@
 #include <Rendering/Texture/TextureData.h>
 #include <Rendering/Material/Material.h>
 #include <filesystem>
+#include <glm/mat4x4.hpp>
+#include <unordered_map>
+
 
 struct aiMesh;
 struct aiScene;
@@ -11,9 +14,6 @@ struct aiNode;
 struct aiMaterial;
 struct aiString;
 #include <assimp/material.h>
-#include <glm/mat4x4.hpp>
-#include <unordered_map>
-#include <Common/IdTypes.h>
 
 namespace MagicRed::Rendering
 {
