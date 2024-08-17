@@ -53,6 +53,5 @@ namespace MagicRed::Rendering
         VkDescriptorSet m_lightingDescriptorSet;
     public:
         GraphicsPipeline m_pipeline;
-        GraphicsPipelineId m_pipelineId;
     };
 }
