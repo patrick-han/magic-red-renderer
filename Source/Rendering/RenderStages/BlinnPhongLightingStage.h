@@ -10,7 +10,7 @@
 namespace MagicRed::Rendering
 {
     class GfxDevice;
-    class TextureCache;
+    class RenderTextureCache;
 
     struct DescriptorSetLayoutBinding {
         VkDescriptorType descriptorType;
@@ -26,7 +26,7 @@ namespace MagicRed::Rendering
         BlinnPhongLightingStage(
             const GfxDevice& _gfxDevice,
             const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,
-            const TextureCache& _textureCache,
+            const RenderTextureCache& _renderTextureCache,
             const VkDescriptorPool _globalDescriptorPool,
             const VkDescriptorSetLayout _bindlessDescriptorSetLayout,
             const VkDescriptorSet _bindlessDescriptorSet,
@@ -46,7 +46,7 @@ namespace MagicRed::Rendering
         const std::string m_fragmentShaderPath = std::string("Shaders/blinn-phong.frag.spv");
         const VkExtent2D m_extent = {WINDOW_WIDTH, WINDOW_HEIGHT};
 
-        const TextureCache& m_textureCache;
+        const RenderTextureCache& m_renderTextureCache;
         const VkDescriptorPool m_globalDescriptorPool;
         const VkDescriptorSet m_bindlessDescriptorSet;
         VkDescriptorSetLayout m_lightingDescriptorSetLayout;

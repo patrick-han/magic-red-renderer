@@ -51,10 +51,21 @@ namespace MagicRed::Rendering
     static Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
     static float cameraSpeed = 0.0f;
 
-    void Renderer::run() {
+    // Explicitly do nothing in the constructor/destructor so we can tightly control startup/shutdown behavior
+    // This should go for all engine subsystems
+    Renderer::Renderer() {}
+    Renderer::~Renderer() {}
+
+    void Renderer::Startup() {
         initWindow();
         init_graphics();
+    }
+
+    void Renderer::run() {
         mainLoop();
+    }
+
+    void Renderer::Shutdown() {
         cleanup();
     }
 
@@ -381,7 +392,7 @@ namespace MagicRed::Rendering
                 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,    // TODO: Copy from to swapchain
                 VK_IMAGE_TYPE_2D
             );
-            m_albedoRTId = m_TextureCache.add_render_texture_texture(m_GfxDevice, albedoRTFormat, albedoRTImage_ci);
+            m_albedoRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, albedoRTFormat, albedoRTImage_ci);
 
             VkFormat worldNormalsRTFormat = VK_FORMAT_A2R10G10B10_UNORM_PACK32;
             VkImageCreateInfo worldNormalsRTImage_ci = image_create_info(worldNormalsRTFormat, fullFrameBufferExtent,
@@ -390,7 +401,7 @@ namespace MagicRed::Rendering
                 // | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, // Input to deferred lighting // TODO: subpass
                 VK_IMAGE_TYPE_2D
             );
-            m_worldNormalsRTId = m_TextureCache.add_render_texture_texture(m_GfxDevice, worldNormalsRTFormat, worldNormalsRTImage_ci);
+            m_worldNormalsRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, worldNormalsRTFormat, worldNormalsRTImage_ci);
 
             VkFormat metallicRoughnessRTFormat = VK_FORMAT_R8G8_UNORM;
             VkImageCreateInfo metallicRoughnessRTImage_ci = image_create_info(metallicRoughnessRTFormat, fullFrameBufferExtent,
@@ -399,7 +410,7 @@ namespace MagicRed::Rendering
                 // | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, // Input to deferred lighting // TODO: subpass
                 VK_IMAGE_TYPE_2D
             );
-            m_metallicRoughnessRTId = m_TextureCache.add_render_texture_texture(m_GfxDevice, metallicRoughnessRTFormat, metallicRoughnessRTImage_ci);
+            m_metallicRoughnessRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, metallicRoughnessRTFormat, metallicRoughnessRTImage_ci);
         }
 
         // Lighting
@@ -410,7 +421,7 @@ namespace MagicRed::Rendering
                 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,    // TODO: Copy from to swapchain
                 VK_IMAGE_TYPE_2D
             );
-            m_lightingRTId = m_TextureCache.add_render_texture_texture(m_GfxDevice, lightingRTFormat, lightingRTImage_ci);
+            m_lightingRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, lightingRTFormat, lightingRTImage_ci);
         }
     }
 
@@ -419,9 +430,9 @@ namespace MagicRed::Rendering
         {
             // GBuffer
             VkFormat colorAttachmentFormats[3] = {
-                m_TextureCache.get_render_texture_texture(m_albedoRTId).allocatedImage.imageFormat,
-                m_TextureCache.get_render_texture_texture(m_worldNormalsRTId).allocatedImage.imageFormat,
-                m_TextureCache.get_render_texture_texture(m_metallicRoughnessRTId).allocatedImage.imageFormat
+                m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.imageFormat,
+                m_RenderTextureCache.get_render_texture(m_worldNormalsRTId).allocatedImage.imageFormat,
+                m_RenderTextureCache.get_render_texture(m_metallicRoughnessRTId).allocatedImage.imageFormat
             };
             VkPipelineRenderingCreateInfoKHR pipelineRenderingCI = {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
@@ -444,7 +455,7 @@ namespace MagicRed::Rendering
         {
             // Lighting
             VkFormat lightingColorAttachmentFormats[1] = {
-                m_TextureCache.get_render_texture_texture(m_lightingRTId).allocatedImage.imageFormat
+                m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.imageFormat
             };
             VkPipelineRenderingCreateInfoKHR lightingPipelineRenderingCI = {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
@@ -458,7 +469,7 @@ namespace MagicRed::Rendering
             m_pLightingStage = std::make_unique<BlinnPhongLightingStage>(
                 m_GfxDevice
                 , &lightingPipelineRenderingCI
-                , m_TextureCache
+                , m_RenderTextureCache
                 , m_globalDescriptorPool
                 , m_bindlessDescriptorSetLayout
                 , m_bindlessDescriptorSet
@@ -598,7 +609,7 @@ namespace MagicRed::Rendering
             .MinImageCount = 3,
             .ImageCount = 3,
             .UseDynamicRendering = true,
-            .ColorAttachmentFormat = m_TextureCache.get_render_texture_texture(m_albedoRTId).allocatedImage.imageFormat
+            .ColorAttachmentFormat = m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.imageFormat
         };
 
         initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
@@ -727,7 +738,7 @@ namespace MagicRed::Rendering
             // Transition albedo and world normals RTs to color attachment
             {
                 VkImageMemoryBarrier imb = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_albedoRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED,
@@ -744,7 +755,7 @@ namespace MagicRed::Rendering
                 );
 
                 VkImageMemoryBarrier imb2 = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_worldNormalsRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_worldNormalsRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED,
@@ -761,7 +772,7 @@ namespace MagicRed::Rendering
                 );
 
                 VkImageMemoryBarrier imb3 = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_metallicRoughnessRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_metallicRoughnessRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED,
@@ -783,19 +794,19 @@ namespace MagicRed::Rendering
 
             {
                 VkRenderingAttachmentInfoKHR albedoAttachmentInfo = rendering_attachment_info(
-                    m_TextureCache.get_render_texture_texture(m_albedoRTId).allocatedImage.imageView,
+                    m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.imageView,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     &DEFAULT_CLEAR_VALUE_COLOR
                 );
 
                 VkRenderingAttachmentInfoKHR worldNormalsAttachmentInfo = rendering_attachment_info(
-                    m_TextureCache.get_render_texture_texture(m_worldNormalsRTId).allocatedImage.imageView,
+                    m_RenderTextureCache.get_render_texture(m_worldNormalsRTId).allocatedImage.imageView,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     &DEFAULT_CLEAR_VALUE_ZERO
                 );
 
                 VkRenderingAttachmentInfoKHR metallicRoughnessAttachmentInfo = rendering_attachment_info(
-                    m_TextureCache.get_render_texture_texture(m_metallicRoughnessRTId).allocatedImage.imageView,
+                    m_RenderTextureCache.get_render_texture(m_metallicRoughnessRTId).allocatedImage.imageView,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     &DEFAULT_CLEAR_VALUE_ZERO
                 );
@@ -828,7 +839,7 @@ namespace MagicRed::Rendering
             // Transition gbuffer + depth image to sampled images
             {
                 VkImageMemoryBarrier imb = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_albedoRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -845,7 +856,7 @@ namespace MagicRed::Rendering
                 );
 
                 VkImageMemoryBarrier imb2 = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_worldNormalsRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_worldNormalsRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -862,7 +873,7 @@ namespace MagicRed::Rendering
                 );
 
                 VkImageMemoryBarrier imb3 = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_metallicRoughnessRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_metallicRoughnessRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -903,7 +914,7 @@ namespace MagicRed::Rendering
             // Transition lighting outut image to color attachment
             {
                 VkImageMemoryBarrier imb = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_lightingRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED,
@@ -925,7 +936,7 @@ namespace MagicRed::Rendering
             // Lighting Pass
             {
                 VkRenderingAttachmentInfoKHR lightingAttachmentInfo = rendering_attachment_info(
-                    m_TextureCache.get_render_texture_texture(m_lightingRTId).allocatedImage.imageView,
+                    m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.imageView,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     &DEFAULT_CLEAR_VALUE_COLOR
                 );
@@ -944,12 +955,12 @@ namespace MagicRed::Rendering
 
 
             // Draw imgui
-            draw_imgui(m_TextureCache.get_render_texture_texture(m_lightingRTId).allocatedImage.imageView);
+            draw_imgui(m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.imageView);
 
             // Transition lighting mage to copy src
             {
                 VkImageMemoryBarrier imb = image_memory_barrier(
-                    m_TextureCache.get_render_texture_texture(m_lightingRTId).allocatedImage.image,
+                    m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_TRANSFER_READ_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -1017,8 +1028,8 @@ namespace MagicRed::Rendering
 
             vkCmdCopyImage(
                 cmdBuffer,
-                //m_TextureCache.get_render_texture_texture(m_albedoRTId).allocatedImage.image,
-                m_TextureCache.get_render_texture_texture(m_lightingRTId).allocatedImage.image,
+                //m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.image,
+                m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 m_GfxDevice.m_swapChainImages[imageIndex],
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -1226,6 +1237,7 @@ namespace MagicRed::Rendering
         vkDestroySampler(m_GfxDevice, m_linearSampler, nullptr);
         vkDestroySampler(m_GfxDevice, m_nearestSampler, nullptr);
 
+        m_RenderTextureCache.cleanup(m_GfxDevice);
         m_TextureCache.cleanup(m_GfxDevice);
         m_MeshCache.cleanup(m_GfxDevice);
         m_GfxDevice.cleanup();

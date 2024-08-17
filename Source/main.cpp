@@ -1,10 +1,16 @@
-#include <Rendering/Core/Renderer.h>
+#include <Engine.h>
+
+
 
 
 int main() {
-    MagicRed::Rendering::Renderer renderer;
+    MagicRed::Engine engine;
 
-    renderer.run();
+    engine.Startup();
+
+    engine.Run();
+
+    engine.Shutdown();
 
     return EXIT_SUCCESS;
 }

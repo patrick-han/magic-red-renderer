@@ -11,6 +11,7 @@
 #include <Rendering/Mesh/DefaultPushConstants.h>
 #include <Rendering/Pipeline/GraphicsPipeline.h>
 #include <Rendering/Texture/TextureCache.h>
+#include <Rendering/Core/RenderTextureCache.h>
 #include <Rendering/Material/MaterialCache.h>
 #include <Rendering/Light/PointLight.h>
 #include <Rendering/Light/DirectionalLight.h>
@@ -27,14 +28,19 @@ namespace MagicRed::Rendering
 
     class Renderer {
     public:
-        Renderer() = default;
+        Renderer();
+        ~Renderer();
+        void Startup();
         void run();
+        void Shutdown();
     private:
         SDL_Window *m_window;
         GfxDevice m_GfxDevice;
         MeshCache m_MeshCache;
         MaterialCache m_MaterialCache;
         TextureCache m_TextureCache;
+        RenderTextureCache m_RenderTextureCache;
+
 
         VkDescriptorPool m_imguiPool;
         uint32_t m_currentFrame = 0;

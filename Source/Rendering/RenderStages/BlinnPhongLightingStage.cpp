@@ -1,7 +1,7 @@
 #include "BlinnPhongLightingStage.h"
 #include <Rendering/Core/GfxDevice.h>
 #include <Rendering/Core/RenderingDefaults.h>
-#include <Rendering/Texture/TextureCache.h>
+#include <Rendering/Core/RenderTextureCache.h>
 
 namespace MagicRed::Rendering
 {
@@ -16,7 +16,7 @@ namespace MagicRed::Rendering
     BlinnPhongLightingStage::BlinnPhongLightingStage(
         const GfxDevice& _gfxDevice,
         const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,
-        const TextureCache& _textureCache,
+        const RenderTextureCache& _renderTextureCache,
         const VkDescriptorPool _globalDescriptorPool,
         const VkDescriptorSetLayout _bindlessDescriptorSetLayout,
         const VkDescriptorSet _bindlessDescriptorSet,
@@ -25,7 +25,7 @@ namespace MagicRed::Rendering
         GPUTextureId _metallicRoughnessRTId
         )
         : StageBase(_gfxDevice)
-        , m_textureCache(_textureCache)
+        , m_renderTextureCache(_renderTextureCache)
         , m_globalDescriptorPool(_globalDescriptorPool)
         , m_bindlessDescriptorSet(_bindlessDescriptorSet)
         , m_pipeline(m_gfxDevice)
@@ -70,7 +70,7 @@ namespace MagicRed::Rendering
 
             {
                     VkDescriptorImageInfo albedoImageInfo = {
-                        .imageView = m_textureCache.get_render_texture_texture(_albedoRTId).allocatedImage.imageView,
+                        .imageView = m_renderTextureCache.get_render_texture(_albedoRTId).allocatedImage.imageView,
                         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                     };
                     VkWriteDescriptorSet albedoWriteDescriptor = {
@@ -86,7 +86,7 @@ namespace MagicRed::Rendering
             }
             {
                     VkDescriptorImageInfo normalsImageInfo = {
-                        .imageView = m_textureCache.get_render_texture_texture(_worldNormalsRTId).allocatedImage.imageView,
+                        .imageView = m_renderTextureCache.get_render_texture(_worldNormalsRTId).allocatedImage.imageView,
                         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                     };
                     VkWriteDescriptorSet normalsWriteDescriptor = {
@@ -102,7 +102,7 @@ namespace MagicRed::Rendering
             }
             {
                     VkDescriptorImageInfo metallicRoughnessImageInfo = {
-                        .imageView = m_textureCache.get_render_texture_texture(_metallicRoughnessRTId).allocatedImage.imageView,
+                        .imageView = m_renderTextureCache.get_render_texture(_metallicRoughnessRTId).allocatedImage.imageView,
                         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                     };
                     VkWriteDescriptorSet metallicRoughnessWriteDescriptor = {
