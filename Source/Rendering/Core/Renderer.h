@@ -101,7 +101,7 @@ namespace MagicRed::Rendering
         void init_render_textures();
         void init_render_stages();
 
-        void update_texture_descriptors();
+        void update_bindless_texture_descriptors();
         
         void init_imgui();
         

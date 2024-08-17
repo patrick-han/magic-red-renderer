@@ -68,19 +68,19 @@ namespace MagicRed::Rendering
 
     void Renderer::init_graphics() {
         m_GfxDevice.init(m_window);
-        init_lights();
-        create_samplers();
-        init_bindless_descriptors();
-        init_assets();
-        init_material_data();
-        init_scene_data();
+        init_lights();                  // Create light objects on CPU side and upload them to the per fif light buffers
+        create_samplers();              // Create sampler objects via handles
+        init_bindless_descriptors();    // Create descriptor pool and descriptor set for the bindless resources
+        init_assets();                  // Load assets (mesh + textures -> materials) into CPU side, then onto the GPU
+        init_material_data();           // Upload material data to the GPU
+        init_scene_data();              // Initialize the scene data like matrices and buffer pointers, and upload the buffer
 
-        init_global_descriptor_pool();
+        init_global_descriptor_pool();  // Create global descriptor pool used only for render textures atm
 
-        init_render_textures();
-        init_render_stages();
+        init_render_textures();         // Initialize gpu-only images as a part of the TextureCache's rendertextures portion
+        init_render_stages();           // Initialize stage objects which only require knowledge of _formats_ for now. The actual image handles are specified when drawing via ImageViews
 
-        update_texture_descriptors();
+        update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
 
         init_imgui();
     }
@@ -507,7 +507,7 @@ namespace MagicRed::Rendering
         }
     }
 
-    void Renderer::update_texture_descriptors() {
+    void Renderer::update_bindless_texture_descriptors() {
 
         // TODO: should batch things per frame?
 
