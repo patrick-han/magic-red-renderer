@@ -22,6 +22,13 @@
 #include <Rendering/RenderStages/GBufferStage.h>
 #include <Rendering/RenderStages/BlinnPhongLightingStage.h>
 
+
+namespace MagicRed::Resource
+{
+    class ResourceManager;
+    class CPUModelLoader;
+}
+
 namespace MagicRed::Rendering
 {
     class SDL_window;
@@ -33,6 +40,12 @@ namespace MagicRed::Rendering
         void Startup();
         void run();
         void Shutdown();
+        GPUMeshId UploadMesh(const CPUMesh& mesh);
+        GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName);
+        MaterialId AddMaterial(const Material& material);
+
+        friend class MagicRed::Resource::ResourceManager;
+        friend class MagicRed::Resource::CPUModelLoader;
     private:
         SDL_Window *m_window;
         GfxDevice m_GfxDevice;
@@ -55,6 +68,8 @@ namespace MagicRed::Rendering
 
         // MaterialData
         AllocatedBuffer m_materialDataBuffer;
+        GPUTextureId m_defaultTexturePlaceholderId{NULL_GPU_TEXTURE_ID};
+        MaterialId m_defaultMaterialId{NULL_MATERIAL_ID};
 
         // SceneData
         CPUSceneData m_CPUSceneData;
@@ -99,7 +114,7 @@ namespace MagicRed::Rendering
         void create_samplers();
         void init_bindless_descriptors();
         void init_assets();
-        void init_material_data();
+        void update_material_data();
         void init_scene_data();
 
         void init_global_descriptor_pool();

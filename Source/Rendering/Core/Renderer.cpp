@@ -23,7 +23,7 @@
 #include <Camera/Camera.h>
 #include <Common/Log.h>
 #include <Rendering/Mesh/Mesh.h>
-#include <Model/Model.h>
+#include <Resource/Model/Model.h>
 
 #include <Rendering/Image/Image.h>
 #include <Rendering/Wrappers/ImageMemoryBarrier.h>
@@ -62,11 +62,26 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::run() {
+        update_material_data();           // Upload material data to the GPU
+        init_scene_data();              // Initialize the scene data like matrices and buffer pointers, and upload the buffer
+        update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
         mainLoop();
     }
 
     void Renderer::Shutdown() {
         cleanup();
+    }
+
+    GPUMeshId Renderer::UploadMesh(const CPUMesh& cpuMesh) {
+        return m_MeshCache.add_mesh(m_GfxDevice, cpuMesh);
+    }
+
+    GPUTextureId Renderer::UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName) {
+        return m_TextureCache.add_texture(m_GfxDevice, texLoadingData, textureName);
+    }
+
+    MaterialId Renderer::AddMaterial(const Material& material) {
+        return m_MaterialCache.add_material(material);
     }
 
     void Renderer::initWindow() {
@@ -83,15 +98,13 @@ namespace MagicRed::Rendering
         create_samplers();              // Create sampler objects via handles
         init_bindless_descriptors();    // Create descriptor pool and descriptor set for the bindless resources
         init_assets();                  // Load assets (mesh + textures -> materials) into CPU side, then onto the GPU
-        init_material_data();           // Upload material data to the GPU
-        init_scene_data();              // Initialize the scene data like matrices and buffer pointers, and upload the buffer
 
         init_global_descriptor_pool();  // Create global descriptor pool used only for render textures atm
 
         init_render_textures();         // Initialize gpu-only images as a part of the TextureCache's rendertextures portion
         init_render_stages();           // Initialize stage objects which only require knowledge of _formats_ for now. The actual image handles are specified when drawing via ImageViews
 
-        update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
+        // update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
 
         init_imgui();
     }
@@ -242,8 +255,7 @@ namespace MagicRed::Rendering
                 .data = data,
                 .texSize = {width, height, 4}
             };
-            GPUTextureId placeholderTextureId = m_TextureCache.add_texture(m_GfxDevice, textureLoadingData, "default_1_texture.png");
-            UNUSED(placeholderTextureId);
+            m_defaultTexturePlaceholderId = m_TextureCache.add_texture(m_GfxDevice, textureLoadingData, "default_1_texture.png");
             stbi_image_free(data);
         }
         {
@@ -259,23 +271,23 @@ namespace MagicRed::Rendering
             stbi_image_free(data);
         }
 
-        {
-            // Sponza mesh
-            MagicRed::Asset::CPUModel sponzaModel(ROOT_DIR "/Assets/Meshes/sponza-gltf/Sponza.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
-            glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
-            //    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(0.0, 0.0, 1.0));
-            glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
-            for (CPUMesh& mesh : sponzaModel.m_cpuMeshes)
-            {
-                GPUMeshId sponzaMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
-                m_sceneRenderMeshComponents.emplace_back(sponzaMeshId, m_MeshCache, translate * scale);
-            }
-        }
+        // {
+        //     // Sponza mesh
+        //     MagicRed::Asset::CPUModel sponzaModel(ROOT_DIR "/Assets/Meshes/sponza-gltf/Sponza.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
+        //     glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
+        //     //    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(0.0, 0.0, 1.0));
+        //     glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
+        //     for (CPUMesh& mesh : sponzaModel.m_cpuMeshes)
+        //     {
+        //         GPUMeshId sponzaMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
+        //         m_sceneRenderMeshComponents.emplace_back(sponzaMeshId, m_MeshCache, translate * scale);
+        //     }
+        // }
 
-        glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
-        glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-        glm::mat4 scale = glm::scale(rotate, glm::vec3(5.0f, 5.0f, 5.0f));
-        UNUSED(scale);
+        // glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
+        // glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
+        // glm::mat4 scale = glm::scale(rotate, glm::vec3(5.0f, 5.0f, 5.0f));
+        // UNUSED(scale);
 
 
         // {
@@ -335,24 +347,26 @@ namespace MagicRed::Rendering
         //      }
         //  }
 
-        {
-            // Helmet mesh
-            MagicRed::Asset::CPUModel helmetModel(ROOT_DIR "/Assets/Meshes/DamagedHelmet.glb", true, m_MaterialCache, m_TextureCache, m_GfxDevice);
+        // {
+        //     // Helmet mesh
+        //     MagicRed::Asset::CPUModel helmetModel(ROOT_DIR "/Assets/Meshes/DamagedHelmet.glb", true, m_MaterialCache, m_TextureCache, m_GfxDevice);
 
 
-            for (CPUMesh& mesh : helmetModel.m_cpuMeshes)
-            {
-                GPUMeshId helmetMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
+        //     for (CPUMesh& mesh : helmetModel.m_cpuMeshes)
+        //     {
+        //         GPUMeshId helmetMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
 
-                glm::mat4 helmetTransform = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 3.0f, 0.0f));
-                helmetTransform = glm::rotate(helmetTransform, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
+        //         glm::mat4 helmetTransform = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 3.0f, 0.0f));
+        //         helmetTransform = glm::rotate(helmetTransform, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
 
-                m_sceneRenderMeshComponents.emplace_back(helmetMeshId, m_MeshCache, helmetTransform);
-            }
-        }
+        //         m_sceneRenderMeshComponents.emplace_back(helmetMeshId, m_MeshCache, helmetTransform);
+        //     }
+        // }
     }
 
-    void Renderer::init_material_data() {
+    void Renderer::update_material_data() {
+        Material defaultMaterial {m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId};
+        m_defaultMaterialId = m_MaterialCache.add_material(defaultMaterial);
         upload_buffer(
             m_materialDataBuffer,
             m_MaterialCache.get_material_count() * sizeof(Material),
@@ -1157,11 +1171,14 @@ namespace MagicRed::Rendering
             ImGui::SliderFloat("rm", &rm,  2.0f * -3.14f, 2.0f *3.14f);
             // for (auto& renderMeshComponent : m_sceneRenderMeshComponents)
             // {
+            if (m_sceneRenderMeshComponents.size() > 0)
+            {
             RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
                     glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
                     glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
                     glm::mat4 scale = glm::scale(rotate, glm::vec3(1.0f, 1.0f, 1.0f));
                     renderMeshComponent.m_transformMatrix = scale;
+            }
             // }
             ImGui::End();
             ImGui::Render();
