@@ -5,6 +5,7 @@
 #include <Rendering/Core/RenderingConfig.h>
 #include <vulkan/vk_enum_string_helper.h> // Doesn't work on linux?
 #include <cassert>
+#include <array>
 
 namespace MagicRed::Rendering
 {
@@ -38,11 +39,48 @@ namespace MagicRed::Rendering
         } else {
             MRLOG("Release build");
         }
+    #if PLATFORM_MACOS
+
+        m_extensionsVector.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
+
+        // Disable shader validation for MoltenVK
+        std::array<VkValidationFeatureDisableEXT,2> validationFeaturesDisabled = {
+            VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT,
+            VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT,
+        };
+
+        const VkValidationFeaturesEXT features = {
+            .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+            .pNext = nullptr,
+            // .enabledValidationFeatureCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0u,
+            // .pEnabledValidationFeatures = config_.enableValidation ? validationFeaturesEnabled : nullptr,
+            .disabledValidationFeatureCount = validationFeaturesDisabled.size(),
+            .pDisabledValidationFeatures = validationFeaturesDisabled.data()
+        };
+
+        // Needed in older versions of MoltenVK
+        const int useMetalArgumentBuffers = 1;
+        std::array<VkLayerSettingEXT, 1> layerSettings = {{
+            {"MoltenVK", "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", VK_LAYER_SETTING_TYPE_INT32_EXT, 1, &useMetalArgumentBuffers}
+        }};
+
+        const VkLayerSettingsCreateInfoEXT layerSettingsCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
+            .pNext = &features,
+            .settingCount = layerSettings.size(),
+            .pSettings = layerSettings.data()
+        };
+    #endif
+
 
         // Create instance
         VkInstanceCreateInfo instanceCreateInfo = {
             VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+    #if PLATFORM_MACOS
+            &layerSettingsCreateInfo,
+    #else
             nullptr,
+    #endif
             instanceCreateFlagBits,
             &appInfo,
             static_cast<uint32_t>(m_layers.size()),
