@@ -55,7 +55,7 @@ namespace MagicRed::Rendering
             MRCERR(string_VkResult(res));
             MRCERR("Failed to create instance!");
         }
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             vkDestroyInstance(m_instance, nullptr);
         });
     }
@@ -83,7 +83,7 @@ namespace MagicRed::Rendering
             MRCERR(string_VkResult(res));
             MRCERR("Failed to create debug messenger!");
         }
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
         });
     }
@@ -93,7 +93,7 @@ namespace MagicRed::Rendering
         if (res != SDL_TRUE) {
             MRCERR("Could not create surface!");
         }
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
         });
     }
@@ -245,7 +245,7 @@ namespace MagicRed::Rendering
             nullptr
         };
         vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             vkDestroyDevice(m_device, nullptr);
         });
     }
@@ -310,7 +310,7 @@ namespace MagicRed::Rendering
             MRCERR(string_VkResult(res));
             MRCERR("Could not create swap chain!");
         }
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
         });
     }
@@ -331,7 +331,7 @@ namespace MagicRed::Rendering
                 MRCERR("Could not create swap chain image view!");
             }
         }
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             for (uint32_t k = 0; k < m_swapChainImageViews.size(); k++) {
                 vkDestroyImageView(m_device, m_swapChainImageViews[k], nullptr);
             }   
@@ -389,7 +389,7 @@ namespace MagicRed::Rendering
 
         vkCreateImageView(m_device, &depthImageViewCreateInfo, nullptr, &m_depthImage.imageView);
 
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             vkDestroyImageView(m_device, m_depthImage.imageView, nullptr);
             vmaDestroyImage(m_vmaAllocator, m_depthImage.image, m_depthImage.allocation);
         });
@@ -401,14 +401,14 @@ namespace MagicRed::Rendering
             VkSemaphoreCreateInfo semaphoreCreateInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, {}, {}};
             vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_imageAvailableSemaphores[i]);
             vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderFinishedSemaphores[i]);
-            m_mainDeletionQueue.push_function([=]() {
+            m_mainDeletionQueue.push_function([this, i]() {
                 vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
                 vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
             });
 
             VkFenceCreateInfo fenceCreateInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
             vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_renderFences[i]);
-            m_mainDeletionQueue.push_function([=]() {
+            m_mainDeletionQueue.push_function([this, i]() {
                 vkDestroyFence(m_device, m_renderFences[i], nullptr);
             });
         }
@@ -417,7 +417,7 @@ namespace MagicRed::Rendering
         {
             VkFenceCreateInfo fenceCreateInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
             vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_immediateFence);
-            m_mainDeletionQueue.push_function([=]() {
+            m_mainDeletionQueue.push_function([this]() {
                 vkDestroyFence(m_device, m_immediateFence, nullptr);
             });
         }
@@ -430,7 +430,7 @@ namespace MagicRed::Rendering
         vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_commandPool);
         vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_immediateCommandPool);
 
-        m_mainDeletionQueue.push_function([=]() {
+        m_mainDeletionQueue.push_function([this]() {
             vkDestroyCommandPool(m_device, m_commandPool, nullptr);
             vkDestroyCommandPool(m_device, m_immediateCommandPool, nullptr);
         });
