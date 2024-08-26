@@ -19,7 +19,7 @@ namespace MagicRed::Rendering
 
     class BlinnPhongLightingStage final : public StageBase {
 
-        inline static constexpr std::array<VkPushConstantRange, 1> m_pushConstantRanges = {DefaultPushConstants::range()};
+        static constexpr std::array<VkPushConstantRange, 1> m_pushConstantRanges = {DefaultPushConstants::range()};
 
     public:
         // BlinnPhongLightingStage() = delete;
