@@ -166,10 +166,12 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::init_bindless_descriptors() {
-        // maxPerStageResources on M2 Pro is 159, it's insanely high on a 4080S tho (4294967295)
-        // maxPerStageDescriptorUpdateAfterBindSampledImages on M2 Pro is 128, 1048576 on the 4080S
-        // This seems likely a driver restriction rather than HW related?
+#if PLATFORM_MACOS // TODO: Temporary until bindless is fixed in MoltenVK
+        constexpr uint32_t maxBindlessResourceCount = 120;
+#else
         constexpr uint32_t maxBindlessResourceCount = 16536;
+#endif
+        
         constexpr uint32_t maxSamplerCount = 2;
 
         // Create a global descriptor pool, and let it know how many of each descriptor type we want up front
@@ -728,9 +730,9 @@ namespace MagicRed::Rendering
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
-
+            // Transition depth image to be written to in renderpass
             {
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
                     m_GfxDevice.m_depthImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
@@ -740,6 +742,7 @@ namespace MagicRed::Rendering
                 );
                 vkCmdPipelineBarrier(
                     cmdBuffer,
+                    // TODO: Are these the correct pipeline stages? Or too conservative
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     {},
@@ -749,43 +752,24 @@ namespace MagicRed::Rendering
                 );
             }
 
-            // Transition albedo and world normals RTs to color attachment
+            // Transition gbuffer RTs to color attachment to be written to in renderpass
             {
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                std::array<VkImageMemoryBarrier, 3> barriers;
+                barriers[0] = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
                 );
-                vkCmdPipelineBarrier(
-                    cmdBuffer,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    {},
-                    0, nullptr,
-                    0, nullptr,
-                    1, &imb
-                );
-
-                VkImageMemoryBarrier imb2 = image_memory_barrier(
+                barriers[1] = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_worldNormalsRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
                 );
-                vkCmdPipelineBarrier(
-                    cmdBuffer,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    {},
-                    0, nullptr,
-                    0, nullptr,
-                    1, &imb2
-                );
-
-                VkImageMemoryBarrier imb3 = image_memory_barrier(
+                barriers[2] = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_metallicRoughnessRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -797,9 +781,8 @@ namespace MagicRed::Rendering
                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     {},
-                    0, nullptr,
-                    0, nullptr,
-                    1, &imb3
+                    0, nullptr, 0, nullptr,
+                    barriers.size(), barriers.data()
                 );
             }
 
@@ -852,41 +835,22 @@ namespace MagicRed::Rendering
 
             // Transition gbuffer + depth image to sampled images
             {
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                std::array<VkImageMemoryBarrier, 3> gbuffer_barriers;
+                gbuffer_barriers[0] = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 );
-                vkCmdPipelineBarrier(
-                    cmdBuffer,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                    {},
-                    0, nullptr,
-                    0, nullptr,
-                    1, &imb
-                );
-
-                VkImageMemoryBarrier imb2 = image_memory_barrier(
+                gbuffer_barriers[1] = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_worldNormalsRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                 );
-                vkCmdPipelineBarrier(
-                    cmdBuffer,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                    {},
-                    0, nullptr,
-                    0, nullptr,
-                    1, &imb2
-                );
-
-                VkImageMemoryBarrier imb3 = image_memory_barrier(
+                gbuffer_barriers[2] = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_metallicRoughnessRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT,
@@ -898,12 +862,11 @@ namespace MagicRed::Rendering
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     {},
-                    0, nullptr,
-                    0, nullptr,
-                    1, &imb3
+                    0, nullptr, 0, nullptr,
+                    gbuffer_barriers.size(), gbuffer_barriers.data()
                 );
 
-                VkImageMemoryBarrier imb4 = image_memory_barrier(
+                VkImageMemoryBarrier imb4 = create_image_memory_barrier(
                     m_GfxDevice.m_depthImage.image,
                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                     // VK_IMAGE_LAYOUT_UNDEFINED,
@@ -918,16 +881,15 @@ namespace MagicRed::Rendering
                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     {},
-                    0, nullptr,
-                    0, nullptr,
+                    0, nullptr, 0, nullptr,
                     1, &imb4
                 );
             }
 
 
-            // Transition lighting outut image to color attachment
+            // Transition lighting outut image to color attachment to be written to in lighting renderpass
             {
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,
                     VK_ACCESS_NONE,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -971,9 +933,9 @@ namespace MagicRed::Rendering
             // Draw imgui
             draw_imgui(m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.imageView);
 
-            // Transition lighting mage to copy src
+            // Transition lighting image to copy src
             {
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_TRANSFER_READ_BIT,
@@ -994,7 +956,7 @@ namespace MagicRed::Rendering
 
             // Transition swapchain to copy dst
             {
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
                     m_GfxDevice.m_swapChainImages[imageIndex],
                     VK_ACCESS_NONE,
                     VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -1013,7 +975,7 @@ namespace MagicRed::Rendering
 
             }
 
-            // Copy albedo image to swapchain
+            // Copy lighting image to swapchain
             const VkImageCopy imageCopy= {
                 .srcSubresource = {
                     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1042,7 +1004,6 @@ namespace MagicRed::Rendering
 
             vkCmdCopyImage(
                 cmdBuffer,
-                //m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.image,
                 m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 m_GfxDevice.m_swapChainImages[imageIndex],
@@ -1054,7 +1015,7 @@ namespace MagicRed::Rendering
 
             {
                 // Transition swapchain to correct presentation layout
-                VkImageMemoryBarrier imb = image_memory_barrier(
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
                     m_GfxDevice.m_swapChainImages[imageIndex],
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     {},
