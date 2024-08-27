@@ -47,12 +47,16 @@ namespace MagicRed::Rendering
         }
 
         // Texture Cache
-        inline GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName) {
+        [[nodiscard]] inline GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName) {
             return m_TextureCache.upload_texture(m_GfxDevice, texLoadingData, textureName);
         }
 
-        inline GPUTextureId GetTextureId(const std::string& textureName) const {
+        [[nodiscard]] inline GPUTextureId GetTextureId(const std::string& textureName) const {
             return m_TextureCache.get_texture_id(textureName);
+        }
+
+        [[nodiscard]] inline bool IsTextureLoadedAlready(const std::string& textureName) const {
+            return m_TextureCache.is_texture_loaded_already(textureName);
         }
 
 
@@ -60,7 +64,6 @@ namespace MagicRed::Rendering
         MaterialId AddMaterial(const Material& material);
 
         friend class MagicRed::Resource::ResourceManager;
-        friend class MagicRed::Resource::CPUModelLoader;
     private:
         SDL_Window *m_window;
         GfxDevice m_GfxDevice;

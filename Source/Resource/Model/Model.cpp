@@ -67,7 +67,7 @@ namespace MagicRed::Resource
                 exit(1);
         }
         
-        if (!m_pRenderer->m_TextureCache.is_texture_loaded_already(textureName))
+        if (!m_pRenderer->IsTextureLoadedAlready(textureName))
         {
             std::filesystem::path texturePath = m_path.parent_path() / std::filesystem::path(textureName);
             int width, height, numberComponents;
@@ -121,7 +121,7 @@ namespace MagicRed::Resource
         }
         
 
-        if (!m_pRenderer->m_TextureCache.is_texture_loaded_already(textureName))
+        if (!m_pRenderer->IsTextureLoadedAlready(textureName))
         {
             int width, height, numberComponents;
             stbi_uc* data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(texture->pcData), texture->mWidth, &width, &height, &numberComponents, STBI_rgb_alpha);
@@ -358,8 +358,7 @@ namespace MagicRed::Resource
                         meshMaterial.emissiveTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
                 }
-                // cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
-                cpuMesh.m_materialId = m_pRenderer->m_MaterialCache.add_material(meshMaterial);
+                cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
                 m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, cpuMesh.m_materialId);
             }
         }
