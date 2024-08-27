@@ -40,8 +40,23 @@ namespace MagicRed::Rendering
         void Startup();
         void run();
         void Shutdown();
-        GPUMeshId UploadMesh(const CPUMesh& mesh);
-        GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName);
+
+        // Mesh Cache
+        inline GPUMeshId UploadMesh(const CPUMesh& cpuMesh) {
+            return m_MeshCache.add_mesh(m_GfxDevice, cpuMesh);
+        }
+
+        // Texture Cache
+        inline GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName) {
+            return m_TextureCache.upload_texture(m_GfxDevice, texLoadingData, textureName);
+        }
+
+        inline GPUTextureId GetTextureId(const std::string& textureName) const {
+            return m_TextureCache.get_texture_id(textureName);
+        }
+
+
+        // Material Cache
         MaterialId AddMaterial(const Material& material);
 
         friend class MagicRed::Resource::ResourceManager;
@@ -49,9 +64,10 @@ namespace MagicRed::Rendering
     private:
         SDL_Window *m_window;
         GfxDevice m_GfxDevice;
+
         MeshCache m_MeshCache;
-        MaterialCache m_MaterialCache;
         TextureCache m_TextureCache;
+        MaterialCache m_MaterialCache;
         RenderTextureCache m_RenderTextureCache;
 
 

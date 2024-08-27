@@ -72,14 +72,6 @@ namespace MagicRed::Rendering
         cleanup();
     }
 
-    GPUMeshId Renderer::UploadMesh(const CPUMesh& cpuMesh) {
-        return m_MeshCache.add_mesh(m_GfxDevice, cpuMesh);
-    }
-
-    GPUTextureId Renderer::UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName) {
-        return m_TextureCache.add_texture(m_GfxDevice, texLoadingData, textureName);
-    }
-
     MaterialId Renderer::AddMaterial(const Material& material) {
         return m_MaterialCache.add_material(material);
     }
@@ -257,7 +249,7 @@ namespace MagicRed::Rendering
                 .data = data,
                 .texSize = {width, height, 4}
             };
-            m_defaultTexturePlaceholderId = m_TextureCache.add_texture(m_GfxDevice, textureLoadingData, "default_1_texture.png");
+            m_defaultTexturePlaceholderId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, "default_1_texture.png");
             stbi_image_free(data);
         }
         {
@@ -268,7 +260,7 @@ namespace MagicRed::Rendering
                 .data = data,
                 .texSize = {width, height, 4}
             };
-            GPUTextureId placeholderTextureId = m_TextureCache.add_texture(m_GfxDevice, textureLoadingData, "missing_diffuse_texture.png");
+            GPUTextureId placeholderTextureId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, "missing_diffuse_texture.png");
             UNUSED(placeholderTextureId);
             stbi_image_free(data);
         }

@@ -76,12 +76,12 @@ namespace MagicRed::Resource
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            *meshMaterialTextureIdToSet  = m_pRenderer->m_TextureCache.add_texture(m_pRenderer->m_GfxDevice, textureLoadingData, textureName);
+            *meshMaterialTextureIdToSet  = m_pRenderer->UploadTexture(textureLoadingData, textureName);
             stbi_image_free(data);
         }
         else
         {
-            *meshMaterialTextureIdToSet  = m_pRenderer->m_TextureCache.get_texture_id(textureName);
+            *meshMaterialTextureIdToSet  = m_pRenderer->GetTextureId(textureName);
         }
     }
 
@@ -135,12 +135,12 @@ namespace MagicRed::Resource
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            *meshMaterialTextureIdToSet = m_pRenderer->m_TextureCache.add_texture(m_pRenderer->m_GfxDevice, textureLoadingData, textureName);
+            *meshMaterialTextureIdToSet = m_pRenderer->UploadTexture(textureLoadingData, textureName);
             stbi_image_free(textureLoadingData.data);
         }
         else
         {
-            *meshMaterialTextureIdToSet = m_pRenderer->m_TextureCache.get_texture_id(textureName);
+            *meshMaterialTextureIdToSet = m_pRenderer->GetTextureId(textureName);
         }
     }
 
@@ -249,7 +249,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.diffuseTextureId = m_pRenderer->m_TextureCache.get_texture_id(missingDiffuseTextureName);
+                        meshMaterial.diffuseTextureId = m_pRenderer->GetTextureId(missingDiffuseTextureName);
                     }
                     // else
                     // {
@@ -263,7 +263,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
+                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
 
                     if (materialNormalCount > 0)
@@ -272,7 +272,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.normalTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
+                        meshMaterial.normalTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
 
                     if (materialEmissiveCount > 0)
@@ -281,7 +281,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.emissiveTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
+                        meshMaterial.emissiveTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
 
 
@@ -331,7 +331,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.diffuseTextureId = m_pRenderer->m_TextureCache.get_texture_id(missingDiffuseTextureName);
+                        meshMaterial.diffuseTextureId = m_pRenderer->GetTextureId(missingDiffuseTextureName);
                     }
                     if (materialMetallicRoughnessCount > 0)
                     {
@@ -339,7 +339,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
+                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
                     if (materialNormalCount > 0)
                     {
@@ -347,7 +347,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.normalTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
+                        meshMaterial.normalTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
                     if (materialEmissiveCount > 0)
                     {
@@ -355,7 +355,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.emissiveTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
+                        meshMaterial.emissiveTextureId = m_pRenderer->GetTextureId(default1TextureName);
                     }
                 }
                 // cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);

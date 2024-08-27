@@ -19,7 +19,7 @@ namespace MagicRed::Rendering
         TextureCache(TextureCache&&) = delete;
         TextureCache& operator=(TextureCache&&) = delete;
 
-        [[nodiscard]] GPUTextureId add_texture(const GfxDevice& gfxDevice, const TextureLoadingData& texLoadingData, const std::string& textureName);
+        [[nodiscard]] GPUTextureId upload_texture(const GfxDevice& gfxDevice, const TextureLoadingData& texLoadingData, const std::string& textureName);
 
         [[nodiscard]] inline const GPUTexture& get_texture(GPUTextureId id) const {
             return m_gpuTextures[id];
