@@ -7,7 +7,8 @@ namespace MagicRed::Rendering
 }
 
 
-namespace MagicRed::Resource {
+namespace MagicRed::Resource 
+{
     class ResourceManager {
     public:
         ResourceManager();
