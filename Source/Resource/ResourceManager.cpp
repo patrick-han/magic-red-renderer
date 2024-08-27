@@ -31,8 +31,8 @@ namespace MagicRed::Resource
     //         }
     //     }
 
-    void ResourceManager::LoadModel(std::string path, bool texturesEmbedded) {
-        CPUModelLoader cpuModelLoader(path, texturesEmbedded, m_pRenderer);
+    void ResourceManager::LoadModel(std::string filePath, bool texturesEmbedded) {
+        CPUModelLoader cpuModelLoader(m_pRenderer, texturesEmbedded, filePath, m_guidToFileMap);
         cpuModelLoader.LoadImmediately();
         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
         glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));

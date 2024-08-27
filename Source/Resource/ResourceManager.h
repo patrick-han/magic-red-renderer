@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <Resource/GUID.h>
 
 namespace MagicRed::Rendering
 {
@@ -22,10 +23,11 @@ namespace MagicRed::Resource
         // ResourceManager is to dispatch resource requests to/between the various engine 
         // systems
         void Startup/*RegisterRenderer*/(MagicRed::Rendering::Renderer* _pRenderer);
-        void LoadModel(std::string path, bool texturesEmbedded);
+        void LoadModel(std::string filePath, bool texturesEmbedded);
 
     private:
         MagicRed::Rendering::Renderer* m_pRenderer {nullptr};
+        std::unordered_map<GUID, std::string> m_guidToFileMap;
 
 
     };

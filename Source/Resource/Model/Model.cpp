@@ -32,6 +32,8 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include <Resource/GUID.h>
+
 
 namespace MagicRed::Resource
 {
@@ -40,6 +42,9 @@ namespace MagicRed::Resource
         aiString str;
         material->GetTexture(textureType, 0, &str);
         const std::string textureName(str.C_Str());
+
+        // TODO:
+        m_guidToFileMapRef.insert({GUID(), textureName});
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -86,6 +91,9 @@ namespace MagicRed::Resource
         material->GetTexture(textureType, 0, &embeddedTextureFile);
         const aiTexture* texture = scene->GetEmbeddedTexture(embeddedTextureFile.C_Str());
         std::string textureName = m_path.filename().replace_extension().string();
+
+        // TODO:
+        m_guidToFileMapRef.insert({GUID(), textureName});
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -395,11 +403,17 @@ namespace MagicRed::Resource
         }
     }
 
-    CPUModelLoader::CPUModelLoader(std::string _filePath, bool _texturesEmbedded, MagicRed::Rendering::Renderer* _pRenderer) 
+    CPUModelLoader::CPUModelLoader(
+        MagicRed::Rendering::Renderer* _pRenderer
+        , bool _texturesEmbedded
+        , std::string _filePath
+        , std::unordered_map<GUID, std::string>& _guidToFileMapRef
+    ) 
     : m_pRenderer(_pRenderer)
     , m_texturesEmbedded(_texturesEmbedded)
     , m_filePath(_filePath)
     , m_path(_filePath)
+    , m_guidToFileMapRef(_guidToFileMapRef)
     {
     }
 

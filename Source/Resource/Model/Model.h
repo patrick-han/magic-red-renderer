@@ -22,9 +22,16 @@ namespace MagicRed::Rendering
 
 namespace MagicRed::Resource
 {
+    class GUID;
+
     class CPUModelLoader {
     public:
-        CPUModelLoader(std::string _filePath, bool _texturesEmbedded, MagicRed::Rendering::Renderer* _pRenderer);
+        CPUModelLoader(
+            MagicRed::Rendering::Renderer* _pRenderer
+            , bool _texturesEmbedded
+            , std::string _filePath
+            , std::unordered_map<GUID, std::string>& _guidToFileMapRef
+        );
         void LoadImmediately();
         std::vector<MagicRed::Rendering::CPUMesh> m_cpuMeshes;
     private:
@@ -32,7 +39,7 @@ namespace MagicRed::Resource
         bool m_texturesEmbedded;
         const std::string m_filePath; // TODO
         const std::filesystem::path m_path;
-
+        std::unordered_map<GUID, std::string>& m_guidToFileMapRef;
 
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
