@@ -17,25 +17,29 @@ struct aiString;
 
 namespace MagicRed::Rendering
 {
-    class GfxDevice;
-    class TextureCache;
-    class MaterialCache;
+    class Renderer;
 }
 
-namespace MagicRed::Asset
+namespace MagicRed::Resource
 {
-    struct CPUModel {
-        CPUModel(const char* _filePath, bool _texturesEmbedded, MagicRed::Rendering::MaterialCache& _materialCache, MagicRed::Rendering::TextureCache& _textureCache, const MagicRed::Rendering::GfxDevice& _gfxDevice);
+    class GUID;
 
+    class CPUModelLoader {
+    public:
+        CPUModelLoader(
+            MagicRed::Rendering::Renderer* _pRenderer
+            , bool _texturesEmbedded
+            , std::string _filePath
+            , std::unordered_map<GUID, std::string>& _guidToFileMapRef
+        );
+        void LoadImmediately();
         std::vector<MagicRed::Rendering::CPUMesh> m_cpuMeshes;
     private:
-        MagicRed::Rendering::MaterialCache& m_materialCache;
-        MagicRed::Rendering::TextureCache& m_textureCache;
-        const MagicRed::Rendering::GfxDevice& m_gfxDevice;
+        MagicRed::Rendering::Renderer* m_pRenderer;
         bool m_texturesEmbedded;
-        const char* m_filePath;
+        const std::string m_filePath; // TODO
         const std::filesystem::path m_path;
-
+        std::unordered_map<GUID, std::string>& m_guidToFileMapRef;
 
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 

@@ -26,10 +26,6 @@ namespace MagicRed::Rendering
         return textureId;
     }
 
-    [[nodiscard]] const GPUTexture& RenderTextureCache::get_render_texture(GPUTextureId id) const {
-        return m_gpuRTTextures[id];
-    }
-
     void RenderTextureCache::cleanup(const GfxDevice& gfxDevice) {
 
         for (auto &texture : m_gpuRTTextures)

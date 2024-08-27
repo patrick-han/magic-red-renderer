@@ -11,6 +11,7 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <Rendering/Texture/TextureCache.h>
 #include <Rendering/Material/MaterialCache.h>
 #include <Rendering/Material/Material.h>
+#include <Rendering/Core/Renderer.h>
 #include <vulkan/vulkan.h>
 #include <Common/Log.h>
 #include <span>
@@ -31,14 +32,19 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include <Resource/GUID.h>
 
-namespace MagicRed::Asset
+
+namespace MagicRed::Resource
 {
-    void CPUModel::load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial)
+    void CPUModelLoader::load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial)
     {
         aiString str;
         material->GetTexture(textureType, 0, &str);
         const std::string textureName(str.C_Str());
+
+        // TODO:
+        m_guidToFileMapRef.insert({GUID(), textureName});
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -61,7 +67,7 @@ namespace MagicRed::Asset
                 exit(1);
         }
         
-        if (!m_textureCache.is_texture_loaded_already(textureName))
+        if (!m_pRenderer->m_TextureCache.is_texture_loaded_already(textureName))
         {
             std::filesystem::path texturePath = m_path.parent_path() / std::filesystem::path(textureName);
             int width, height, numberComponents;
@@ -70,21 +76,24 @@ namespace MagicRed::Asset
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            *meshMaterialTextureIdToSet  = m_textureCache.add_texture(m_gfxDevice, textureLoadingData, textureName);
+            *meshMaterialTextureIdToSet  = m_pRenderer->m_TextureCache.add_texture(m_pRenderer->m_GfxDevice, textureLoadingData, textureName);
             stbi_image_free(data);
         }
         else
         {
-            *meshMaterialTextureIdToSet  = m_textureCache.get_texture_id(textureName);
+            *meshMaterialTextureIdToSet  = m_pRenderer->m_TextureCache.get_texture_id(textureName);
         }
     }
 
-    void CPUModel::load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial)
+    void CPUModelLoader::load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial)
     {
         aiString embeddedTextureFile;
         material->GetTexture(textureType, 0, &embeddedTextureFile);
         const aiTexture* texture = scene->GetEmbeddedTexture(embeddedTextureFile.C_Str());
         std::string textureName = m_path.filename().replace_extension().string();
+
+        // TODO:
+        m_guidToFileMapRef.insert({GUID(), textureName});
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -112,7 +121,7 @@ namespace MagicRed::Asset
         }
         
 
-        if (!m_textureCache.is_texture_loaded_already(textureName))
+        if (!m_pRenderer->m_TextureCache.is_texture_loaded_already(textureName))
         {
             int width, height, numberComponents;
             stbi_uc* data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(texture->pcData), texture->mWidth, &width, &height, &numberComponents, STBI_rgb_alpha);
@@ -126,16 +135,16 @@ namespace MagicRed::Asset
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            *meshMaterialTextureIdToSet = m_textureCache.add_texture(m_gfxDevice, textureLoadingData, textureName);
+            *meshMaterialTextureIdToSet = m_pRenderer->m_TextureCache.add_texture(m_pRenderer->m_GfxDevice, textureLoadingData, textureName);
             stbi_image_free(textureLoadingData.data);
         }
         else
         {
-            *meshMaterialTextureIdToSet = m_textureCache.get_texture_id(textureName);
+            *meshMaterialTextureIdToSet = m_pRenderer->m_TextureCache.get_texture_id(textureName);
         }
     }
 
-    MagicRed::Rendering::CPUMesh CPUModel::process_mesh(aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix)
+    MagicRed::Rendering::CPUMesh CPUModelLoader::process_mesh(aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix)
     {
         MagicRed::Rendering::CPUMesh cpuMesh;
         cpuMesh.m_transform = transformMatrix;
@@ -240,7 +249,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.diffuseTextureId = m_textureCache.get_texture_id(missingDiffuseTextureName);
+                        meshMaterial.diffuseTextureId = m_pRenderer->m_TextureCache.get_texture_id(missingDiffuseTextureName);
                     }
                     // else
                     // {
@@ -254,7 +263,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.metallicRoughnessTextureId = m_textureCache.get_texture_id(default1TextureName);
+                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
                     }
 
                     if (materialNormalCount > 0)
@@ -263,7 +272,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.normalTextureId = m_textureCache.get_texture_id(default1TextureName);
+                        meshMaterial.normalTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
                     }
 
                     if (materialEmissiveCount > 0)
@@ -272,7 +281,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.emissiveTextureId = m_textureCache.get_texture_id(default1TextureName);
+                        meshMaterial.emissiveTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
                     }
 
 
@@ -281,7 +290,7 @@ namespace MagicRed::Asset
                 {
                     // TODO: When can a material have multiple textures of type diffuse?
 
-                    // TODO: Right now this CPUModel class is directly uploading the textures as it parses the assimp data structure, which doesn't
+                    // TODO: Right now this CPUModelLoader class is directly uploading the textures as it parses the assimp data structure, which doesn't
                     // necessarily follow the spirit of the class name.
                     // Better possibly would be to store the texture data and queue uploading jobs after the fact, along with uploading the mesh data.
 
@@ -322,7 +331,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.diffuseTextureId = m_textureCache.get_texture_id(missingDiffuseTextureName);
+                        meshMaterial.diffuseTextureId = m_pRenderer->m_TextureCache.get_texture_id(missingDiffuseTextureName);
                     }
                     if (materialMetallicRoughnessCount > 0)
                     {
@@ -330,7 +339,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.metallicRoughnessTextureId = m_textureCache.get_texture_id(default1TextureName);
+                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
                     }
                     if (materialNormalCount > 0)
                     {
@@ -338,7 +347,7 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.normalTextureId = m_textureCache.get_texture_id(default1TextureName);
+                        meshMaterial.normalTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
                     }
                     if (materialEmissiveCount > 0)
                     {
@@ -346,10 +355,11 @@ namespace MagicRed::Asset
                     }
                     else
                     {
-                        meshMaterial.emissiveTextureId = m_textureCache.get_texture_id(default1TextureName);
+                        meshMaterial.emissiveTextureId = m_pRenderer->m_TextureCache.get_texture_id(default1TextureName);
                     }
                 }
-                cpuMesh.m_materialId = m_materialCache.add_material(meshMaterial);
+                // cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
+                cpuMesh.m_materialId = m_pRenderer->m_MaterialCache.add_material(meshMaterial);
                 m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, cpuMesh.m_materialId);
             }
         }
@@ -366,7 +376,7 @@ namespace MagicRed::Asset
         };
     }
 
-    void CPUModel::process_assimp_node(aiNode *node, const aiScene *scene, const glm::mat4x4& accumulateMatrix)
+    void CPUModelLoader::process_assimp_node(aiNode *node, const aiScene *scene, const glm::mat4x4& accumulateMatrix)
     {
         glm::mat4x4 transform = accumulateMatrix * convertAssimpMatrix(node->mTransformation);
 
@@ -393,8 +403,21 @@ namespace MagicRed::Asset
         }
     }
 
-    CPUModel::CPUModel(const char* _filePath, bool _texturesEmbedded, MagicRed::Rendering::MaterialCache& _materialCache, MagicRed::Rendering::TextureCache& _textureCache, const MagicRed::Rendering::GfxDevice& _gfxDevice) : m_materialCache(_materialCache), m_textureCache(_textureCache), m_gfxDevice(_gfxDevice), m_texturesEmbedded(_texturesEmbedded), m_filePath(_filePath), m_path(std::string(m_filePath)){
+    CPUModelLoader::CPUModelLoader(
+        MagicRed::Rendering::Renderer* _pRenderer
+        , bool _texturesEmbedded
+        , std::string _filePath
+        , std::unordered_map<GUID, std::string>& _guidToFileMapRef
+    ) 
+    : m_pRenderer(_pRenderer)
+    , m_texturesEmbedded(_texturesEmbedded)
+    , m_filePath(_filePath)
+    , m_path(_filePath)
+    , m_guidToFileMapRef(_guidToFileMapRef)
+    {
+    }
 
+    void CPUModelLoader::LoadImmediately() {
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(m_filePath, aiProcess_Triangulate | aiProcess_FlipUVs);
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)

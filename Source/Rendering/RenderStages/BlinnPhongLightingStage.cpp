@@ -5,7 +5,7 @@
 
 namespace MagicRed::Rendering
 {
-    inline static constexpr std::array<DescriptorSetLayoutBinding, 4> lightingDescriptorBindings {{
+    static constexpr std::array<DescriptorSetLayoutBinding, 4> lightingDescriptorBindings {{
         // GBuffer
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},

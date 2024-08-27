@@ -1,5 +1,6 @@
 #pragma once
 #include <Rendering/Core/Renderer.h>
+#include <Resource/ResourceManager.h>
 
 
 namespace MagicRed
@@ -13,6 +14,7 @@ namespace MagicRed
         void Shutdown();
     private:
         Rendering::Renderer m_renderer;
+        Resource::ResourceManager m_resourceManager;
     };
 }
 

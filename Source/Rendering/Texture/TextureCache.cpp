@@ -15,22 +15,6 @@ namespace MagicRed::Rendering
         return textureId;
     }
 
-    [[nodiscard]] const GPUTexture& TextureCache::get_texture(GPUTextureId id) const {
-        return m_gpuTextures[id];
-    }
-
-    [[nodiscard]] GPUTextureId TextureCache::get_texture_id(const std::string& textureName) const {
-        return m_texturesLoadedAlready.at(textureName);
-    }
-
-    [[nodiscard]] uint32_t TextureCache::get_texture_count() const {
-        return static_cast<uint32_t>(m_gpuTextures.size());
-    }
-
-    [[nodiscard]] bool TextureCache::is_texture_loaded_already(const std::string& textureName) const {
-        return m_texturesLoadedAlready.count(textureName) > 0 ? true : false;
-    }
-
     void TextureCache::cleanup(const GfxDevice& gfxDevice) {
         for (auto &texture : m_gpuTextures)
         {
