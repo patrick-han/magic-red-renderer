@@ -3,6 +3,9 @@
 .DS_Store
 Shaders/*.spv
 .cache
+*.asset
+exampletexture.json
+temp_delete.sh
 
 # Generated CMake files like Platform.h
 Source/Common/Platform.h
