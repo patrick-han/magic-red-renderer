@@ -18,8 +18,14 @@ namespace MagicRed
         m_resourceManager.SetProjectDirectory(gameDirectory);
 
         // Load Resources
-        std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
-        m_resourceManager.ImportModel(sponzaPath, false);
+//        std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
+//        m_resourceManager.ImportModel(sponzaPath, false);
+
+//        std::filesystem::path helemetPath("DamagedHelmet.glb");
+//        m_resourceManager.ImportModel(helemetPath, true);
+
+        std::filesystem::path helmetGltfPath("damagedHelmet-gltf/DamagedHelmet.gltf");
+        m_resourceManager.ImportModel(helmetGltfPath, false);
 
 
         m_renderer.run();
