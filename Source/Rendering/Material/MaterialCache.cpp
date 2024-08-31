@@ -2,13 +2,13 @@
 
 namespace MagicRed::Rendering
 {
-    [[nodiscard]] MaterialId MaterialCache::add_material(const Material& material) {
+    [[nodiscard]] MaterialId MaterialCache::add_material(const GPUMaterial& material) {
         const MaterialId materialId = static_cast<uint32_t>(m_materials.size());
         m_materials.push_back(material);
         return materialId;
     }
 
-    [[nodiscard]] const Material& MaterialCache::get_material(MaterialId id) const {
+    [[nodiscard]] const GPUMaterial& MaterialCache::get_material(MaterialId id) const {
         return m_materials[id];
     }
 

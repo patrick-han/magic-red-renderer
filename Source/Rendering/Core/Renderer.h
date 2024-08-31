@@ -58,8 +58,8 @@ namespace MagicRed::Rendering
         }
 
 
-        // Material Cache
-        MaterialId AddMaterial(const Material& material);
+        // GPUMaterial Cache
+        MaterialId AddMaterial(const GPUMaterial& material);
 
         const MagicRed::Resource::GUID m_defaultTexturePlaceholderGuid;
         GPUTextureId m_defaultTexturePlaceholderId{NULL_GPU_TEXTURE_ID};

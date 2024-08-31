@@ -15,13 +15,13 @@ namespace MagicRed::Rendering
         MaterialCache(MaterialCache&&) = delete;
         MaterialCache& operator=(MaterialCache&&) = delete;
 
-        [[nodiscard]] MaterialId add_material(const Material& material);
-        [[nodiscard]] const Material& get_material(MaterialId id) const;
+        [[nodiscard]] MaterialId add_material(const GPUMaterial& material);
+        [[nodiscard]] const GPUMaterial& get_material(MaterialId id) const;
         [[nodiscard]] const void* get_material_data() const;
         [[nodiscard]] int get_material_count() const;
 
     private:
         void cleanup(); // TODO: Should this call image cleanups? Or image cache should manage memory itself? (probably latter)
-        std::vector<Material> m_materials;
+        std::vector<GPUMaterial> m_materials;
     };
 }

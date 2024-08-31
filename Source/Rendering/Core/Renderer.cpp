@@ -72,7 +72,7 @@ namespace MagicRed::Rendering
         cleanup();
     }
 
-    MaterialId Renderer::AddMaterial(const Material& material) {
+    MaterialId Renderer::AddMaterial(const GPUMaterial& material) {
         return m_MaterialCache.add_material(material);
     }
 
@@ -358,11 +358,11 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::update_material_data() {
-        Material defaultMaterial {m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId};
+        GPUMaterial defaultMaterial {m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId, m_defaultTexturePlaceholderId};
         m_defaultMaterialId = m_MaterialCache.add_material(defaultMaterial);
         upload_buffer(
             m_materialDataBuffer,
-            m_MaterialCache.get_material_count() * sizeof(Material),
+            m_MaterialCache.get_material_count() * sizeof(GPUMaterial),
             m_MaterialCache.get_material_data(),
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR,
             m_GfxDevice.m_vmaAllocator
@@ -497,7 +497,7 @@ namespace MagicRed::Rendering
         m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
         m_CPUSceneData.directionalLight = m_directionalLight;
 
-        // Material data only set once at the beginning, since for now we are loading all assets in ahead of time
+        // GPUMaterial data only set once at the beginning, since for now we are loading all assets in ahead of time
         VkBufferDeviceAddressInfoKHR materialBufferAddressInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR,
             .buffer = m_materialDataBuffer.buffer

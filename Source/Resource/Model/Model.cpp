@@ -42,7 +42,7 @@ using json = nlohmann::json;
 
 namespace MagicRed::Resource
 {
-    void CPUModelLoader::load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial)
+    void CPUModelLoader::load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial)
     {
         aiString str;
         material->GetTexture(textureType, 0, &str);
@@ -122,7 +122,7 @@ namespace MagicRed::Resource
         }
     }
 
-    void CPUModelLoader::load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial)
+    void CPUModelLoader::load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial)
     {
         aiString embeddedTextureFile;
         material->GetTexture(textureType, 0, &embeddedTextureFile);
@@ -224,7 +224,7 @@ namespace MagicRed::Resource
             else
             {
                 aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-                MagicRed::Rendering::Material meshMaterial;
+                MagicRed::Rendering::GPUMaterial meshMaterial;
 
                 unsigned int materialDiffuseCount = material->GetTextureCount(aiTextureType_BASE_COLOR);
                 unsigned int materialMetallicRoughnessCount = material->GetTextureCount(aiTextureType_METALNESS);
