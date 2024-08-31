@@ -40,6 +40,14 @@ namespace MagicRed::Resource
         );
         void LoadImmediately();
         std::vector<MagicRed::Rendering::CPUMesh> m_cpuMeshes;
+        std::vector<MaterialId> m_meshMaterialIds;
+
+        // CPUMesh 
+        //  |
+        // MaterialGuid
+        //  |            \
+        //  V             V
+        // TextureGuid    TextureGuid
         int m_textureCount{0};
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
@@ -50,12 +58,9 @@ namespace MagicRed::Resource
 
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
-        
-
-
         void load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial);
         void load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial);
-        MagicRed::Rendering::CPUMesh process_mesh(aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix);
+        void process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix);
         void process_assimp_node(aiNode *node, const aiScene *scene, const glm::mat4x4& accumulateMatrix);
 
     };

@@ -10,6 +10,7 @@
 #include <cstring>
 #include <Common/Compiler/Unused.h>
 #include <Resource/AssetMaker.h>
+#include <cassert>
 
 using json = nlohmann::json;
 
@@ -51,9 +52,13 @@ namespace MagicRed::Resource
         cpuModelLoader.LoadImmediately();
         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
         glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
-        for (MagicRed::Rendering::CPUMesh& mesh : cpuModelLoader.m_cpuMeshes)
+
+        assert(cpuModelLoader.m_cpuMeshes.size() == cpuModelLoader.m_meshMaterialIds.size());
+        for (size_t i = 0; i < cpuModelLoader.m_cpuMeshes.size(); i++)
         {
-            GPUMeshId meshId = m_pRenderer->UploadMesh(mesh);
+            MagicRed::Rendering::CPUMesh& mesh = cpuModelLoader.m_cpuMeshes[i];
+            MaterialId& meshMaterialId = cpuModelLoader.m_meshMaterialIds[i];
+            GPUMeshId meshId = m_pRenderer->UploadMesh(mesh, meshMaterialId);
             m_pRenderer->m_sceneRenderMeshComponents.emplace_back(meshId, m_pRenderer->m_MeshCache, translate * scale);
         }
 
@@ -86,9 +91,13 @@ namespace MagicRed::Resource
         cpuModelLoader.LoadImmediately();
         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
         glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
-        for (MagicRed::Rendering::CPUMesh& mesh : cpuModelLoader.m_cpuMeshes)
+        assert(cpuModelLoader.m_cpuMeshes.size() == cpuModelLoader.m_meshMaterialIds.size());
+        // for (MagicRed::Rendering::CPUMesh& mesh : cpuModelLoader.m_cpuMeshes)
+        for (size_t i = 0; i < cpuModelLoader.m_cpuMeshes.size(); i++)
         {
-            GPUMeshId meshId = m_pRenderer->UploadMesh(mesh);
+            MagicRed::Rendering::CPUMesh& mesh = cpuModelLoader.m_cpuMeshes[i];
+            MaterialId& meshMaterialId = cpuModelLoader.m_meshMaterialIds[i];
+            GPUMeshId meshId = m_pRenderer->UploadMesh(mesh, meshMaterialId);
             m_pRenderer->m_sceneRenderMeshComponents.emplace_back(meshId, m_pRenderer->m_MeshCache, translate * scale);
         }
 

@@ -17,12 +17,12 @@ namespace MagicRed::Rendering
         MeshCache(MeshCache&&) = delete;
         MeshCache& operator=(MeshCache&&) = delete;
 
-        [[nodiscard]] GPUMeshId add_mesh(const GfxDevice& gfxDevice, const CPUMesh& mesh);
+        [[nodiscard]] GPUMeshId add_mesh(const GfxDevice& gfxDevice, const CPUMesh& mesh, const MaterialId meshMaterialId);
         [[nodiscard]] const GPUMesh& get_mesh(GPUMeshId id) const;
         void cleanup(const GfxDevice& gfxDevice);
 
     private:
-        void upload_mesh(const CPUMesh& mesh, VmaAllocator allocator);
+        void upload_mesh(const CPUMesh& mesh, const MaterialId meshMaterialId, VmaAllocator allocator);
         std::vector<GPUMesh> m_meshes;
     };
 }

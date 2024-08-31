@@ -185,9 +185,8 @@ namespace MagicRed::Resource
         }
     }
 
-    MagicRed::Rendering::CPUMesh CPUModelLoader::process_mesh(aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix)
+    void CPUModelLoader::process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix)
     {
-        MagicRed::Rendering::CPUMesh cpuMesh;
         cpuMesh.m_transform = transformMatrix;
         for (size_t i = 0; i < mesh->mNumVertices; i++)
         {
@@ -219,7 +218,8 @@ namespace MagicRed::Resource
         {
             if (m_sceneMaterialsAlreadyLoaded.count(mesh->mMaterialIndex) > 0)
             {
-                cpuMesh.m_materialId = m_sceneMaterialsAlreadyLoaded.at(mesh->mMaterialIndex);
+                // cpuMesh.m_materialId = m_sceneMaterialsAlreadyLoaded.at(mesh->mMaterialIndex);
+                meshMaterialId = m_sceneMaterialsAlreadyLoaded.at(mesh->mMaterialIndex);
             }
             else
             {
@@ -394,11 +394,13 @@ namespace MagicRed::Resource
                         meshMaterial.emissiveTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
                 }
-                cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
-                m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, cpuMesh.m_materialId);
+                // cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
+                meshMaterialId = m_pRenderer->AddMaterial(meshMaterial);
+                // m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, cpuMesh.m_materialId);
+                m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, meshMaterialId);
             }
         }
-        return cpuMesh;
+        // return cpuMesh;
     }
 
     glm::mat4x4 convertAssimpMatrix(const aiMatrix4x4 &aiMat)
@@ -429,7 +431,11 @@ namespace MagicRed::Resource
         for (size_t i = 0; i < node->mNumMeshes; i++)
         {
             aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-            m_cpuMeshes.push_back(process_mesh(mesh, scene, transform));
+            MagicRed::Rendering::CPUMesh cpuMesh;
+            MaterialId meshMaterialId{NULL_MATERIAL_ID};
+            process_mesh(cpuMesh, meshMaterialId, mesh, scene, transform);
+            m_cpuMeshes.push_back(cpuMesh);
+            m_meshMaterialIds.push_back(meshMaterialId);
         }
         // Process this node's child node(s)
         for (size_t i = 0; i < node->mNumChildren; i++)

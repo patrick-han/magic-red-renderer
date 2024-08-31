@@ -3,9 +3,9 @@
 
 namespace MagicRed::Rendering
 {
-    [[nodiscard]] GPUMeshId MeshCache::add_mesh(const GfxDevice& gfxDevice, const CPUMesh& mesh) {
+    [[nodiscard]] GPUMeshId MeshCache::add_mesh(const GfxDevice& gfxDevice, const CPUMesh& mesh, const MaterialId meshMaterialId) {
         const GPUMeshId meshId = m_meshes.size();
-        upload_mesh(mesh, gfxDevice.m_vmaAllocator);
+        upload_mesh(mesh, meshMaterialId, gfxDevice.m_vmaAllocator);
         return meshId;
     }
 
@@ -20,7 +20,7 @@ namespace MagicRed::Rendering
         }
     }
 
-    void MeshCache::upload_mesh(const CPUMesh& mesh, VmaAllocator allocator) {
+    void MeshCache::upload_mesh(const CPUMesh& mesh, const MaterialId meshMaterialId, VmaAllocator allocator) {
 
         GPUMesh gpuMesh;
         gpuMesh.indexCount = static_cast<uint32_t>(mesh.m_indices.size());
@@ -30,7 +30,7 @@ namespace MagicRed::Rendering
         if (mesh.m_indices.size() > 0) {
             upload_buffer(gpuMesh.indexBuffer, mesh.m_indices.size() * sizeof(uint32_t), mesh.m_indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, allocator);
         }
-        gpuMesh.m_materialId = mesh.m_materialId;
+        gpuMesh.m_materialId = meshMaterialId;
         m_meshes.push_back(gpuMesh);
     }
 }

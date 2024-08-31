@@ -44,8 +44,8 @@ namespace MagicRed::Rendering
         void Shutdown();
 
         // Mesh Cache
-        inline GPUMeshId UploadMesh(const CPUMesh& cpuMesh) {
-            return m_MeshCache.add_mesh(m_GfxDevice, cpuMesh);
+        inline GPUMeshId UploadMesh(const CPUMesh& cpuMesh, const MaterialId meshMaterialId) {
+            return m_MeshCache.add_mesh(m_GfxDevice, cpuMesh, meshMaterialId);
         }
 
         // Texture Cache
