@@ -103,7 +103,6 @@ namespace MagicRed::Resource
         if (m_textureFileToGuidMapRef.count(textureName) == 0)
         {
             // New unique texture
-            m_textureCount += 1;
             std::filesystem::path texturePath = m_path.parent_path() / std::filesystem::path(textureName);
             int width, height, numberComponents;
             unsigned char *data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
@@ -158,7 +157,6 @@ namespace MagicRed::Resource
         if (m_textureFileToGuidMapRef.count(textureName) == 0)
         {
             // New unique texture
-            m_textureCount += 1;
             int width, height, numberComponents;
             stbi_uc* data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(texture->pcData), texture->mWidth, &width, &height, &numberComponents, STBI_rgb_alpha);
             if (!data)

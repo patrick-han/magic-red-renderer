@@ -48,7 +48,9 @@ namespace MagicRed::Resource
         //  |            \
         //  V             V
         // TextureGuid    TextureGuid
-        int m_textureCount{0};
+        inline int NumberOfTexturesLoaded() {
+            return static_cast<int>(m_textureFileToGuidMapRef.size());
+        }
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
         bool m_texturesEmbedded;

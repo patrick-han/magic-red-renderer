@@ -62,7 +62,7 @@ namespace MagicRed::Resource
             m_pRenderer->m_sceneRenderMeshComponents.emplace_back(meshId, m_pRenderer->m_MeshCache, translate * scale);
         }
 
-        modelAssetMaker.AddTextureCount(cpuModelLoader.m_textureCount);
+        modelAssetMaker.AddTextureCount(cpuModelLoader.NumberOfTexturesLoaded());
         modelAssetMaker.Write(assetFilePath);
     }
 
