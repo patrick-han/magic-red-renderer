@@ -28,7 +28,7 @@ namespace MagicRed::Resource
         ~AssetMaker();
 
         void AddTexturesEmbeddedField(bool value);
-        void AddTextureGUIDArray(const std::span<GUID const> textureGuids);
+        void AddGUIDArray(const char* fieldName, const std::span<GUID const> guids);
         void AddMaterialParameters(
             const GUID diffuseTexGuid
             , const GUID normalTexGuid

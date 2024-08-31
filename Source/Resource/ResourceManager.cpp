@@ -81,7 +81,7 @@ namespace MagicRed::Resource
         bool texturesEmbedded = jsonData["texturesEmbedded"].template get<bool>();
         GUID guid(jsonData["guid"]);
         std::string sourceFilePath = jsonData["fileSource"].dump();
-        // Erase the escaped quotes at the front and back of the filPath field
+        // Erase the escaped quotes at the front and back of the fileSource field
         sourceFilePath.erase(0, 1);
         sourceFilePath.erase(sourceFilePath.size() - 1);
         MRLOG("Importing model asset: " << guid);
@@ -91,8 +91,8 @@ namespace MagicRed::Resource
         cpuModelLoader.LoadImmediately();
         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
         glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
+
         assert(cpuModelLoader.m_cpuMeshes.size() == cpuModelLoader.m_meshMaterialIds.size());
-        // for (MagicRed::Rendering::CPUMesh& mesh : cpuModelLoader.m_cpuMeshes)
         for (size_t i = 0; i < cpuModelLoader.m_cpuMeshes.size(); i++)
         {
             MagicRed::Rendering::CPUMesh& mesh = cpuModelLoader.m_cpuMeshes[i];

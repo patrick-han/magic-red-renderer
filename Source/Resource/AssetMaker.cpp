@@ -35,9 +35,17 @@ namespace MagicRed::Resource
         m_output += "\t\"texturesEmbedded\": " + std::string(value ? "true" LINE_ENDER : "false" LINE_ENDER);
     }
 
-//    void AssetMaker::AddTextureGUIDArray(const std::span<GUID const> textureGuids) {
-//
-//    }
+    void AssetMaker::AddGUIDArray(const char* fieldName, const std::span<GUID const> guids) {
+        m_output += fieldName;
+        m_output += ": [";
+        for (GUID guid : guids)
+        {
+            m_output += guid.to_string();
+            m_output += ", ";
+        }
+        m_output.erase(m_output.size() - 1); // Remove trailing comma of last element;
+        m_output += "] " LINE_ENDER;
+    }
 
     void AssetMaker::AddMaterialParameters(
         const GUID diffuseTexGuid
