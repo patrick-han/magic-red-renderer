@@ -218,7 +218,6 @@ namespace MagicRed::Resource
         {
             if (m_sceneMaterialsAlreadyLoaded.count(mesh->mMaterialIndex) > 0)
             {
-                // cpuMesh.m_materialId = m_sceneMaterialsAlreadyLoaded.at(mesh->mMaterialIndex);
                 meshMaterialId = m_sceneMaterialsAlreadyLoaded.at(mesh->mMaterialIndex);
             }
             else
@@ -394,9 +393,7 @@ namespace MagicRed::Resource
                         meshMaterial.emissiveTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
                 }
-                // cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
                 meshMaterialId = m_pRenderer->AddMaterial(meshMaterial);
-                // m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, cpuMesh.m_materialId);
                 m_sceneMaterialsAlreadyLoaded.emplace(mesh->mMaterialIndex, meshMaterialId);
             }
         }

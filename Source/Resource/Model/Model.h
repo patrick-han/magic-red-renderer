@@ -56,6 +56,8 @@ namespace MagicRed::Resource
         const std::filesystem::path m_path;
         std::unordered_map<std::string, GUID>& m_fileToGuidMapRef;
 
+        // Mapping from assimp mesh material index to MaterialId to keep track
+        // of materials that have already been loaded while parsing assimp structure
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
         void load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial);
