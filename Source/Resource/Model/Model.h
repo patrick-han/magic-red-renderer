@@ -30,21 +30,27 @@ namespace MagicRed::Resource
             MagicRed::Rendering::Renderer* _pRenderer
             , bool _texturesEmbedded
             , std::string _filePath
-            , std::unordered_map<GUID, std::string>& _guidToFileMapRef
+            , std::unordered_map<std::string, GUID>& _fileToGuidMapRef
+        );
+        CPUModelLoader(
+            MagicRed::Rendering::Renderer* _pRenderer
+            , bool _texturesEmbedded
+            , std::filesystem::path _filePath
+            , std::unordered_map<std::string, GUID>& _fileToGuidMapRef
         );
         void LoadImmediately();
         std::vector<MagicRed::Rendering::CPUMesh> m_cpuMeshes;
+        int m_textureCount{0};
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
         bool m_texturesEmbedded;
         const std::string m_filePath; // TODO
         const std::filesystem::path m_path;
-        std::unordered_map<GUID, std::string>& m_guidToFileMapRef;
+        std::unordered_map<std::string, GUID>& m_fileToGuidMapRef;
 
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
-        inline static const std::string missingDiffuseTextureName{"missing_diffuse_texture.png"};
-        inline static const std::string default1TextureName{"default_1_texture.png"};
+        
 
 
         void load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::Material& meshMaterial);

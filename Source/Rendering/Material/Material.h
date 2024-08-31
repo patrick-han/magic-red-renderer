@@ -6,7 +6,7 @@
 namespace MagicRed::Rendering
 {
     // This point to Ids in a TextureCache
-    struct Material {
+    struct GPUMaterial {
         // TODO:
         // "baseColorFactor": [ 1.000, 0.766, 0.336, 1.0 ],
         // "metallicFactor": 1.0,

@@ -19,7 +19,7 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 // Define these only in *one* .cpp file.
 #define STB_IMAGE_IMPLEMENTATION
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <External/tinygltf/stb_image.h>
+#include <External/stb_image.h>
 
 
 #include <assimp/Importer.hpp>
@@ -34,6 +34,11 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 
 #include <Resource/GUID.h>
 
+#include <fstream>
+#include <External/json.hpp>
+#include <Resource/AssetMaker.h>
+using json = nlohmann::json;
+
 
 namespace MagicRed::Resource
 {
@@ -42,9 +47,6 @@ namespace MagicRed::Resource
         aiString str;
         material->GetTexture(textureType, 0, &str);
         const std::string textureName(str.C_Str());
-
-        // TODO:
-        m_guidToFileMapRef.insert({GUID(), textureName});
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -66,9 +68,42 @@ namespace MagicRed::Resource
                 MRCERR("Tried to load non-standard aiTextureType!");
                 exit(1);
         }
-        
-        if (!m_pRenderer->IsTextureLoadedAlready(textureName))
+        std::filesystem::path sourceFilePath = m_path.parent_path() / std::filesystem::path(textureName);
+        std::filesystem::path assetFilePath = m_path.parent_path() / std::filesystem::path(textureName);
+        assetFilePath += ".asset";
+
+        std::unique_ptr<GUID> pTextureGuid;
+
+        // First check if the texture has been previously imported
+        if(!std::filesystem::exists(assetFilePath))
         {
+            // If not we need to create a new .asset
+            pTextureGuid = std::make_unique<GUID>();
+
+            // TEMP: TODO
+            AssetMaker textureAssetMaker(*pTextureGuid, AssetType::Texture, sourceFilePath);
+            textureAssetMaker.Write(assetFilePath);
+        }
+        // Retrieve its guid if so
+        else
+        {
+            std::ifstream jsonFileStream(assetFilePath);
+            json jsonData = json::parse(jsonFileStream);
+            if (std::strcmp(jsonData["assetType"].dump().c_str(), "\"texture\""))
+            {
+                MRLOG("Tried to load a non texture assetType");
+                exit(1); // TODO
+            }
+
+            GUID guid(jsonData["guid"]);
+            pTextureGuid = std::make_unique<GUID>(guid);
+        }
+
+        // Now, we actually load the texture file if it hasn't already been loaded and uploaded to the GPU
+        if (m_fileToGuidMapRef.count(textureName) == 0)
+        {
+            // New unique texture
+            m_textureCount += 1;
             std::filesystem::path texturePath = m_path.parent_path() / std::filesystem::path(textureName);
             int width, height, numberComponents;
             unsigned char *data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
@@ -76,12 +111,14 @@ namespace MagicRed::Resource
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            *meshMaterialTextureIdToSet  = m_pRenderer->UploadTexture(textureLoadingData, textureName);
+            m_fileToGuidMapRef.insert({textureName, *pTextureGuid});
+            *meshMaterialTextureIdToSet  = m_pRenderer->UploadTexture(textureLoadingData, *pTextureGuid);
             stbi_image_free(data);
         }
-        else
+        else // Otherwise retrieve the existing guid...
         {
-            *meshMaterialTextureIdToSet  = m_pRenderer->GetTextureId(textureName);
+            GUID textureGuid  = m_fileToGuidMapRef[textureName];
+            *meshMaterialTextureIdToSet  = m_pRenderer->GetGPUTextureIdByGuid(textureGuid);
         }
     }
 
@@ -91,9 +128,6 @@ namespace MagicRed::Resource
         material->GetTexture(textureType, 0, &embeddedTextureFile);
         const aiTexture* texture = scene->GetEmbeddedTexture(embeddedTextureFile.C_Str());
         std::string textureName = m_path.filename().replace_extension().string();
-
-        // TODO:
-        m_guidToFileMapRef.insert({GUID(), textureName});
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -121,8 +155,10 @@ namespace MagicRed::Resource
         }
         
 
-        if (!m_pRenderer->IsTextureLoadedAlready(textureName))
+        if (m_fileToGuidMapRef.count(textureName) == 0)
         {
+            // New unique texture
+            m_textureCount += 1;
             int width, height, numberComponents;
             stbi_uc* data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(texture->pcData), texture->mWidth, &width, &height, &numberComponents, STBI_rgb_alpha);
             if (!data)
@@ -135,12 +171,17 @@ namespace MagicRed::Resource
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            *meshMaterialTextureIdToSet = m_pRenderer->UploadTexture(textureLoadingData, textureName);
+            
+            // TODO: should embedded textures have guids?
+            GUID newTextureGuid = GUID();
+            m_fileToGuidMapRef.insert({textureName, newTextureGuid});
+            *meshMaterialTextureIdToSet = m_pRenderer->UploadTexture(textureLoadingData, newTextureGuid);
             stbi_image_free(textureLoadingData.data);
         }
         else
         {
-            *meshMaterialTextureIdToSet = m_pRenderer->GetTextureId(textureName);
+            GUID textureGuid  = m_fileToGuidMapRef[textureName];
+            *meshMaterialTextureIdToSet = m_pRenderer->GetGPUTextureIdByGuid(textureGuid);
         }
     }
 
@@ -249,13 +290,8 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.diffuseTextureId = m_pRenderer->GetTextureId(missingDiffuseTextureName);
+                        meshMaterial.diffuseTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_missingDiffuseTextureGuid);
                     }
-                    // else
-                    // {
-                    //     MRCERR("Uncompressed texture, what do?");
-                    //     exit(1);
-                    // }
 
                     if (materialMetallicRoughnessCount > 0)
                     {
@@ -263,7 +299,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetTextureId(default1TextureName);
+                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
 
                     if (materialNormalCount > 0)
@@ -272,7 +308,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.normalTextureId = m_pRenderer->GetTextureId(default1TextureName);
+                        meshMaterial.normalTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
 
                     if (materialEmissiveCount > 0)
@@ -281,7 +317,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.emissiveTextureId = m_pRenderer->GetTextureId(default1TextureName);
+                        meshMaterial.emissiveTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
 
 
@@ -331,7 +367,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.diffuseTextureId = m_pRenderer->GetTextureId(missingDiffuseTextureName);
+                        meshMaterial.diffuseTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_missingDiffuseTextureGuid);
                     }
                     if (materialMetallicRoughnessCount > 0)
                     {
@@ -339,7 +375,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetTextureId(default1TextureName);
+                        meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
                     if (materialNormalCount > 0)
                     {
@@ -347,7 +383,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.normalTextureId = m_pRenderer->GetTextureId(default1TextureName);
+                        meshMaterial.normalTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
                     if (materialEmissiveCount > 0)
                     {
@@ -355,7 +391,7 @@ namespace MagicRed::Resource
                     }
                     else
                     {
-                        meshMaterial.emissiveTextureId = m_pRenderer->GetTextureId(default1TextureName);
+                        meshMaterial.emissiveTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
                 }
                 cpuMesh.m_materialId = m_pRenderer->AddMaterial(meshMaterial);
@@ -406,13 +442,27 @@ namespace MagicRed::Resource
         MagicRed::Rendering::Renderer* _pRenderer
         , bool _texturesEmbedded
         , std::string _filePath
-        , std::unordered_map<GUID, std::string>& _guidToFileMapRef
+        , std::unordered_map<std::string, GUID>& _fileToGuidMapRef
     ) 
     : m_pRenderer(_pRenderer)
     , m_texturesEmbedded(_texturesEmbedded)
     , m_filePath(_filePath)
     , m_path(_filePath)
-    , m_guidToFileMapRef(_guidToFileMapRef)
+    , m_fileToGuidMapRef(_fileToGuidMapRef)
+    {
+    }
+
+     CPUModelLoader::CPUModelLoader(
+        MagicRed::Rendering::Renderer* _pRenderer
+        , bool _texturesEmbedded
+        , std::filesystem::path _filePath
+        , std::unordered_map<std::string, GUID>& _fileToGuidMapRef
+    ) 
+    : m_pRenderer(_pRenderer)
+    , m_texturesEmbedded(_texturesEmbedded)
+    , m_filePath(_filePath.string())
+    , m_path(_filePath)
+    , m_fileToGuidMapRef(_fileToGuidMapRef)
     {
     }
 

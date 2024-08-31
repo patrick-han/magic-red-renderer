@@ -34,7 +34,7 @@
 
 #include <IncludeHelpers/ImguiIncludes.h>
 
-#include <External/tinygltf/stb_image.h>
+#include <External/stb_image.h>
 
 namespace MagicRed::Rendering
 {
@@ -249,7 +249,7 @@ namespace MagicRed::Rendering
                 .data = data,
                 .texSize = {width, height, 4}
             };
-            m_defaultTexturePlaceholderId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, "default_1_texture.png");
+            m_defaultTexturePlaceholderId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, m_defaultTexturePlaceholderGuid);
             stbi_image_free(data);
         }
         {
@@ -260,8 +260,7 @@ namespace MagicRed::Rendering
                 .data = data,
                 .texSize = {width, height, 4}
             };
-            GPUTextureId placeholderTextureId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, "missing_diffuse_texture.png");
-            UNUSED(placeholderTextureId);
+            m_missingDiffuseTextureId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, m_missingDiffuseTextureGuid);
             stbi_image_free(data);
         }
 
@@ -533,10 +532,10 @@ namespace MagicRed::Rendering
         // Done like this instead of constructing temps in a for loop because of pImageInfo
         std::vector<VkDescriptorImageInfo> textureInfos;
         std::vector<VkWriteDescriptorSet> textureDescriptorWrites;
-        textureInfos.resize(m_TextureCache.get_texture_count());
-        textureDescriptorWrites.resize(m_TextureCache.get_texture_count());
+        textureInfos.resize(m_TextureCache.get_gpu_texture_count());
+        textureDescriptorWrites.resize(m_TextureCache.get_gpu_texture_count());
 
-        for (uint32_t i = 0; i < m_TextureCache.get_texture_count(); i++)
+        for (uint32_t i = 0; i < m_TextureCache.get_gpu_texture_count(); i++)
         {
             textureInfos[i].imageView = m_TextureCache.get_texture(i).allocatedImage.imageView;
             textureInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

@@ -20,6 +20,10 @@ namespace MagicRed::Resource
         { 
             return m_GUID;
         }
+        [[nodiscard]] std::string to_string() const
+        {
+            return std::to_string(m_GUID);
+        }
     private:
         std::uint64_t m_GUID;
     };

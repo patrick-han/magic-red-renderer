@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include <Common/RootDir.h>
+#include <filesystem>
 
 
 namespace MagicRed
@@ -13,11 +14,12 @@ namespace MagicRed
     }
 
     void Engine::Run() {
+        std::filesystem::path gameDirectory(ROOT_DIR "Game/");
+        m_resourceManager.SetProjectDirectory(gameDirectory);
 
         // Load Resources
-        std::string sponzaPathString = std::string(ROOT_DIR "/Assets/Meshes/sponza-gltf/Sponza.gltf");
-        m_resourceManager.LoadModel(sponzaPathString, false);
-
+        std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
+        m_resourceManager.ImportModel(sponzaPath, false);
 
 
         m_renderer.run();

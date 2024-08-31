@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <Resource/GUID.h>
+#include <filesystem>
 
 namespace MagicRed::Rendering
 {
@@ -23,11 +24,20 @@ namespace MagicRed::Resource
         // ResourceManager is to dispatch resource requests to/between the various engine 
         // systems
         void Startup/*RegisterRenderer*/(MagicRed::Rendering::Renderer* _pRenderer);
-        void LoadModel(std::string filePath, bool texturesEmbedded);
+        void SetProjectDirectory(const std::filesystem::path& projectDirectory);
+
+        // Import is used for models not imported already. i.e. they do not yet have an .asset file associated with them already
+        void ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded);
 
     private:
+        // In contrast, Load is used for models that already have an .asset
+        void LoadModel(std::filesystem::path assetFilePath);
         MagicRed::Rendering::Renderer* m_pRenderer {nullptr};
-        std::unordered_map<GUID, std::string> m_guidToFileMap;
+
+        std::filesystem::path m_projectDirectory;
+
+        // TODO: Eventually textures should be compiled on disk with permanent guids assigned?
+        std::unordered_map<std::string, GUID> m_fileToGuidMap;
 
 
     };

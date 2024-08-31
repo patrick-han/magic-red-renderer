@@ -22,6 +22,8 @@
 #include <Rendering/RenderStages/GBufferStage.h>
 #include <Rendering/RenderStages/BlinnPhongLightingStage.h>
 
+#include <Resource/GUID.h>
+
 
 namespace MagicRed::Resource
 {
@@ -47,21 +49,23 @@ namespace MagicRed::Rendering
         }
 
         // Texture Cache
-        [[nodiscard]] inline GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const std::string& textureName) {
-            return m_TextureCache.upload_texture(m_GfxDevice, texLoadingData, textureName);
+        [[nodiscard]] inline GPUTextureId UploadTexture(const TextureLoadingData& texLoadingData, const MagicRed::Resource::GUID guid) {
+            return m_TextureCache.upload_texture(m_GfxDevice, texLoadingData, guid);
         }
 
-        [[nodiscard]] inline GPUTextureId GetTextureId(const std::string& textureName) const {
-            return m_TextureCache.get_texture_id(textureName);
-        }
-
-        [[nodiscard]] inline bool IsTextureLoadedAlready(const std::string& textureName) const {
-            return m_TextureCache.is_texture_loaded_already(textureName);
+        [[nodiscard]] inline GPUTextureId GetGPUTextureIdByGuid(const MagicRed::Resource::GUID guid) const {
+            return m_TextureCache.get_gpu_texture_id_by_guid(guid);
         }
 
 
         // Material Cache
         MaterialId AddMaterial(const Material& material);
+
+        const MagicRed::Resource::GUID m_defaultTexturePlaceholderGuid;
+        GPUTextureId m_defaultTexturePlaceholderId{NULL_GPU_TEXTURE_ID};
+        const MagicRed::Resource::GUID m_missingDiffuseTextureGuid;
+        GPUTextureId m_missingDiffuseTextureId{NULL_GPU_TEXTURE_ID};
+        MaterialId m_defaultMaterialId{NULL_MATERIAL_ID};
 
         friend class MagicRed::Resource::ResourceManager;
     private:
@@ -87,8 +91,6 @@ namespace MagicRed::Rendering
 
         // MaterialData
         AllocatedBuffer m_materialDataBuffer;
-        GPUTextureId m_defaultTexturePlaceholderId{NULL_GPU_TEXTURE_ID};
-        MaterialId m_defaultMaterialId{NULL_MATERIAL_ID};
 
         // SceneData
         CPUSceneData m_CPUSceneData;

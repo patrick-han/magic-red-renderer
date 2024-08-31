@@ -1,22 +1,20 @@
 #include "TextureCache.h"
 #include <Rendering/Core/GfxDevice.h>
+#include <Resource/GUID.h>
+#include <cassert>
 
 namespace MagicRed::Rendering
 {
-    [[nodiscard]] GPUTextureId TextureCache::upload_texture(const GfxDevice& gfxDevice, const TextureLoadingData& texLoadingData, const std::string& textureName) {
-        const GPUTextureId textureId = static_cast<uint32_t>(m_gpuTextures.size());
+    [[nodiscard]] GPUTextureId TextureCache::upload_texture(const GfxDevice& gfxDevice, const TextureLoadingData& texLoadingData, MagicRed::Resource::GUID guid) {
+        const GPUTextureId textureId = static_cast<uint32_t>(m_gpuResidentTextures.size());
         upload_texture(gfxDevice, texLoadingData);
-        if (is_texture_loaded_already(textureName))
-        {
-            MRCERR("Already loaded this texture without checking is_texture_loaded_already(), did you mean to do this?");
-            exit(1);
-        }
-        m_texturesLoadedAlready.emplace(std::move(textureName), textureId);
+        assert(!is_texture_uploaded_already(guid));
+        m_texturesUploadedAlready.insert({guid, textureId});
         return textureId;
     }
 
     void TextureCache::cleanup(const GfxDevice& gfxDevice) {
-        for (auto &texture : m_gpuTextures)
+        for (auto &texture : m_gpuResidentTextures)
         {
             vkDestroyImageView(gfxDevice, texture.allocatedImage.imageView, nullptr);
             vmaDestroyImage(gfxDevice.m_vmaAllocator, texture.allocatedImage.image, texture.allocatedImage.allocation);
@@ -46,6 +44,6 @@ namespace MagicRed::Rendering
         VkImageViewCreateInfo imageViewCreateInfo = imageview_create_info(gpuTexture.allocatedImage.image, format, {}, VK_IMAGE_ASPECT_COLOR_BIT);
         vkCreateImageView(gfxDevice, &imageViewCreateInfo, nullptr, &gpuTexture.allocatedImage.imageView);
 
-        m_gpuTextures.push_back(gpuTexture);
+        m_gpuResidentTextures.push_back(gpuTexture);
     }
 }
