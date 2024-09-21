@@ -42,7 +42,7 @@ namespace MagicRed::Rendering
         void Cleanup() override;
 
     private:
-        const std::string m_vertexShaderPath = std::string("Shaders/fullscreen_quad.vert.spv");
+        const std::string m_vertexShaderPath = std::string("Shaders/fullscreen_effect.vert.spv");
         const std::string m_fragmentShaderPath = std::string("Shaders/blinn-phong.frag.spv");
         const VkExtent2D m_extent = {WINDOW_WIDTH, WINDOW_HEIGHT};
 

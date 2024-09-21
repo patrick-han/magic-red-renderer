@@ -172,7 +172,7 @@ namespace MagicRed::Rendering
         pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
         pushConstants.materialId = 0;
         vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);
-        vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
+        vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
     }
 
     void BlinnPhongLightingStage::Cleanup() {
