@@ -56,7 +56,8 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
     vec3 ambient = diffuseTexColor * ambientStrength * lightColor;
 
     // Diffuse
-    vec3 fragToLightDir = normalize(pushConstants.sceneData.pointLights.data[pointLightIndex].worldSpacePosition - fragWorldPos);
+    vec3 fragToLight = pushConstants.sceneData.pointLights.data[pointLightIndex].worldSpacePosition - fragWorldPos;
+    vec3 fragToLightDir = normalize(fragToLight);
     vec3 norm = normalize(sampledNormal);
     float difference = max(dot(fragToLightDir, norm), 0.0);
     vec3 diffuse = diffuseTexColor * difference * lightColor;
@@ -71,12 +72,12 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
     // float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * specularDifference * lightColor;
 
-    float distance = length(pushConstants.sceneData.pointLights.data[pointLightIndex].worldSpacePosition - fragWorldPos);
+    float fragToLightDist = length(fragToLight);
 
     float attenuation = 1.0 / (
         pushConstants.sceneData.pointLights.data[pointLightIndex].constantAttenuation + 
-        pushConstants.sceneData.pointLights.data[pointLightIndex].linearAttenuation * distance + 
-        pushConstants.sceneData.pointLights.data[pointLightIndex].quadraticAttenuation * distance * distance
+        pushConstants.sceneData.pointLights.data[pointLightIndex].linearAttenuation * fragToLightDist + 
+        pushConstants.sceneData.pointLights.data[pointLightIndex].quadraticAttenuation * fragToLightDist * fragToLightDist
     );
 
     ambient  *= attenuation;
