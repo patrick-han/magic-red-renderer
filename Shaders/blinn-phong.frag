@@ -86,13 +86,16 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
 
 void main() {
     // Sample GBuffer
-    vec3 sampledColor = texture(sampler2D(albedoBuffer, linearSampler), textureCoords).rgb;
-    vec3 sampledNormal = normalize(texture(sampler2D(normalsBuffer, linearSampler), textureCoords).rgb * 2.0 - 1.0);
-    vec2 sampledMetallicRoughness = texture(sampler2D(metallicRoughnessBuffer, linearSampler), textureCoords).rg;
+    // vec3 sampledColor = texture(sampler2D(albedoBuffer, linearSampler), textureCoords).rgb;
+    // vec3 sampledNormal = normalize(texture(sampler2D(normalsBuffer, linearSampler), textureCoords).rgb * 2.0 - 1.0);
+    // vec2 sampledMetallicRoughness = texture(sampler2D(metallicRoughnessBuffer, linearSampler), textureCoords).rg;
+    vec3 sampledColor = texelFetch(sampler2D(albedoBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 sampledNormal = normalize(texelFetch(sampler2D(normalsBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb * 2.0 - 1.0);
+    vec2 sampledMetallicRoughness = texelFetch(sampler2D(metallicRoughnessBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rg;
     float sampledDepth = texelFetch(depthBuffer, ivec2(gl_FragCoord.xy), 0).r;
     // x,y are [0, 1] and so is depth-z [0, 1]
     // sampledDepth = sampledDepth * 2.0 - 1.0; // [-1, 1] // In Vulkan, NDC is [0, 1] in z, unlike OpenGL which expects [-1, 1]
-    vec4 reconstructedDepth = inverse(pushConstants.sceneData.view) * inverse(pushConstants.sceneData.projection) * vec4(textureCoords * 2.0 - 1.0, sampledDepth, 1.0); // TODO: TEMP
+    vec4 reconstructedDepth = inverse(pushConstants.sceneData.view) * inverse(pushConstants.sceneData.projection) * vec4(textureCoords * 2.0 - 1.0, sampledDepth, 1.0); // TODO: don't invert per invocation
     vec3 fragWorldPos =  reconstructedDepth.xyz / reconstructedDepth.w;
 
     
