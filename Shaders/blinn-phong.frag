@@ -37,8 +37,10 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
     // Specular
     float specularStrength = 0.5;
     vec3 viewDir = normalize(pushConstants.sceneData.cameraWorldPosition.xyz - fragWorldPos);
-    vec3 reflectDir = reflect(-fragToLightDir, norm);
-    float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 halfwayDir = normalize(fragToLightDir + viewDir);
+    float specularDifference = pow(max(dot(norm, halfwayDir), 0.0), 32);
+    // vec3 reflectDir = reflect(-fragToLightDir, norm);
+    // float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * specularDifference * lightColor;
 
     vec3 result = (ambient + diffuse + specular);
@@ -63,8 +65,10 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
     // Specular
     float specularStrength = 0.5;
     vec3 viewDir = normalize(pushConstants.sceneData.cameraWorldPosition.xyz - fragWorldPos);
-    vec3 reflectDir = reflect(-fragToLightDir, norm);
-    float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 halfwayDir = normalize(fragToLightDir + viewDir);
+    float specularDifference = pow(max(dot(norm, halfwayDir), 0.0), 32);
+    // vec3 reflectDir = reflect(-fragToLightDir, norm);
+    // float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * specularDifference * lightColor;
 
     float distance = length(pushConstants.sceneData.pointLights.data[pointLightIndex].worldSpacePosition - fragWorldPos);
