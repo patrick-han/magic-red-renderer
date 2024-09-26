@@ -36,16 +36,11 @@ namespace MagicRed::Resource
             , const GUID emissiveTexGuid
         );
         void AddTextureCount(int value);
-
         void Write(std::filesystem::path assetFilePath);
 
-        inline void PrintCurrentOutput() {
-            MRLOG(m_output);
-        }
-
-
     private:
-        std::string m_output{"{\n"};
+        std::string AssetTypeToString(AssetType assetType) const;
+        nlohmann::json m_output;
     };
 
 }

@@ -82,7 +82,7 @@ namespace MagicRed::Resource
 
             // TEMP: TODO
             AssetMaker textureAssetMaker(*pTextureGuid, AssetType::Texture, sourceFilePath.string());
-            //textureAssetMaker.Write(assetFilePath);
+            // textureAssetMaker.Write(assetFilePath);
         }
         // Retrieve its guid if so
         else
