@@ -728,9 +728,8 @@ namespace MagicRed::Rendering
                 );
                 vkCmdPipelineBarrier(
                     cmdBuffer,
-                    // TODO: Are these the correct pipeline stages? Or too conservative
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     {},
                     0, nullptr,
                     0, nullptr,
@@ -764,7 +763,7 @@ namespace MagicRed::Rendering
                 );
                 vkCmdPipelineBarrier(
                     cmdBuffer,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     {},
                     0, nullptr, 0, nullptr,
@@ -855,16 +854,14 @@ namespace MagicRed::Rendering
                 VkImageMemoryBarrier imb4 = create_image_memory_barrier(
                     m_GfxDevice.m_depthImage.image,
                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                    // VK_IMAGE_LAYOUT_UNDEFINED,
                     VK_ACCESS_SHADER_READ_BIT,
                     VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                    // VK_IMAGE_LAYOUT_UNDEFINED,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_IMAGE_ASPECT_DEPTH_BIT
                 );
                 vkCmdPipelineBarrier(
                     cmdBuffer,
-                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     {},
                     0, nullptr, 0, nullptr,
@@ -873,7 +870,7 @@ namespace MagicRed::Rendering
             }
 
 
-            // Transition lighting outut image to color attachment to be written to in lighting renderpass
+            // Transition lighting output image to color attachment to be written to in lighting renderpass
             {
                 VkImageMemoryBarrier imb = create_image_memory_barrier(
                     m_RenderTextureCache.get_render_texture(m_lightingRTId).allocatedImage.image,

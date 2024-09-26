@@ -63,7 +63,7 @@ namespace MagicRed::Resource
         }
 
         modelAssetMaker.AddTextureCount(cpuModelLoader.NumberOfTexturesLoaded());
-        modelAssetMaker.Write(assetFilePath);
+        // modelAssetMaker.Write(assetFilePath);
     }
 
 
