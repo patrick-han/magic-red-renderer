@@ -768,7 +768,7 @@ namespace MagicRed::Rendering
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     {},
                     0, nullptr, 0, nullptr,
-                    barriers.size(), barriers.data()
+                    static_cast<std::uint32_t>(barriers.size()), barriers.data()
                 );
             }
 
@@ -849,7 +849,7 @@ namespace MagicRed::Rendering
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                     {},
                     0, nullptr, 0, nullptr,
-                    gbuffer_barriers.size(), gbuffer_barriers.data()
+                    static_cast<uint32_t>(gbuffer_barriers.size()), gbuffer_barriers.data()
                 );
 
                 VkImageMemoryBarrier imb4 = create_image_memory_barrier(

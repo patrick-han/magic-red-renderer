@@ -81,8 +81,8 @@ namespace MagicRed::Resource
             pTextureGuid = std::make_unique<GUID>();
 
             // TEMP: TODO
-            AssetMaker textureAssetMaker(*pTextureGuid, AssetType::Texture, sourceFilePath);
-            textureAssetMaker.Write(assetFilePath);
+            AssetMaker textureAssetMaker(*pTextureGuid, AssetType::Texture, sourceFilePath.string());
+            //textureAssetMaker.Write(assetFilePath);
         }
         // Retrieve its guid if so
         else

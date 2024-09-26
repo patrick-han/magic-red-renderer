@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <functional>
+#include <string>
 // Based on:
 // https://github.com/TheCherno/Hazel/blob/master/Hazel/src/Hazel/Core/UUID.h
 
