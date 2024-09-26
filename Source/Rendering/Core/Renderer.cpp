@@ -158,13 +158,8 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::init_bindless_descriptors() {
-#if PLATFORM_MACOS // TODO: Temporary until bindless is fixed in MoltenVK
-        constexpr uint32_t maxBindlessResourceCount = 120;
-#else
-        constexpr uint32_t maxBindlessResourceCount = 16536;
-#endif
-        
-        constexpr uint32_t maxSamplerCount = 2;
+        constexpr uint32_t maxBindlessResourceCount = 16536; // Requires MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS
+        constexpr uint32_t maxSamplerCount = 1;
 
         // Create a global descriptor pool, and let it know how many of each descriptor type we want up front
         std::array<VkDescriptorPoolSize, 2> bindlessDescriptorPoolSizes {{
