@@ -9,13 +9,14 @@ namespace MagicRed::Rendering
     GraphicsPipeline::GraphicsPipeline(const GfxDevice& _gfxDevice) : m_logicalDevice(_gfxDevice) {}
 
     void GraphicsPipeline::BuildPipeline(
-        const VkPipelineRenderingCreateInfoKHR* pipelineRenderingCreateInfo,
-        const std::string& vertexShaderPath, 
-        const std::string& fragmentShaderPath, 
-        VertexInputDescription& vertexDescription,
-        std::span<VkPushConstantRange const> pushConstantRanges,
-        std::span<VkDescriptorSetLayout const> descriptorSetLayouts,
-        VkExtent2D extent
+        const VkPipelineRenderingCreateInfoKHR* pipelineRenderingCreateInfo
+        , const std::string& vertexShaderPath
+        , const std::string& fragmentShaderPath
+        , VertexInputDescription& vertexDescription
+        , std::span<VkPushConstantRange const> pushConstantRanges
+        , std::span<VkDescriptorSetLayout const> descriptorSetLayouts
+        , VkExtent2D extent
+        , bool blendEnable
         ) {
 
         // std::string vertexShaderSource = load_shader_source_to_string(std::string(ROOT_DIR) + vertexShaderPath);
@@ -63,12 +64,20 @@ namespace MagicRed::Rendering
 
         VkPipelineMultisampleStateCreateInfo multisampling = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, nullptr, VkPipelineMultisampleStateCreateFlags(), VK_SAMPLE_COUNT_1_BIT, VK_FALSE, 1.0 , {}, {}, {}};
 
-        VkPipelineColorBlendAttachmentState colorBlendAttachment = { VK_FALSE, /*srcCol*/ VK_BLEND_FACTOR_ONE,
-        /*dstCol*/ VK_BLEND_FACTOR_ZERO, /*colBlend*/ VK_BLEND_OP_ADD,
-        /*srcAlpha*/ VK_BLEND_FACTOR_ONE, /*dstAlpha*/ VK_BLEND_FACTOR_ZERO,
-        /*alphaBlend*/ VK_BLEND_OP_ADD,
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT };
+        VkPipelineColorBlendAttachmentState colorBlendAttachment = { 
+            .blendEnable = blendEnable ? VK_TRUE : VK_FALSE, 
+
+            // Color
+            .srcColorBlendFactor = blendEnable ? VK_BLEND_FACTOR_SRC_ALPHA : VK_BLEND_FACTOR_ONE,
+            .dstColorBlendFactor = blendEnable ? VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA : VK_BLEND_FACTOR_ZERO, 
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            // Alpha
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE, 
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT 
+            };
 
         std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates(pipelineRenderingCreateInfo->colorAttachmentCount);
         for (auto& state: colorBlendAttachmentStates)

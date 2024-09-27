@@ -12,6 +12,7 @@ namespace MagicRed::Rendering
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
         glm::mat4x4 m_transform{0.0};
+        bool partiallyTransparentMaterial{false};
     };
 
     struct GPUMesh {

@@ -11,13 +11,14 @@ namespace MagicRed::Rendering
     public:
         GraphicsPipeline(const GfxDevice& _gfxDevice);
         void BuildPipeline(
-            const VkPipelineRenderingCreateInfoKHR* pipelineRenderingCreateInfo,
-            const std::string& vertexShaderPath,
-            const std::string& fragmentShaderPath, 
-            VertexInputDescription& vertexDescription,
-            std::span<VkPushConstantRange const> pushConstantRanges,
-            std::span<VkDescriptorSetLayout const> descriptorSetLayouts,
-            VkExtent2D extent
+            const VkPipelineRenderingCreateInfoKHR* pipelineRenderingCreateInfo
+            , const std::string& vertexShaderPath
+            , const std::string& fragmentShaderPath
+            , VertexInputDescription& vertexDescription
+            , std::span<VkPushConstantRange const> pushConstantRanges
+            , std::span<VkDescriptorSetLayout const> descriptorSetLayouts
+            , VkExtent2D extent
+            , bool blendEnable
             );
         ~GraphicsPipeline() = default;
         const VkPipeline& GetPipelineHandle() const;

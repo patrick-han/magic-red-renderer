@@ -106,6 +106,17 @@ namespace MagicRed::Resource
             std::filesystem::path texturePath = m_path.parent_path() / std::filesystem::path(textureName);
             int width, height, numberComponents;
             unsigned char *data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
+
+            // bool hasPartialTransparency = false;
+            // for (int i = 0; i < width * height; i++) {
+            //     unsigned char alpha = data[i * numberComponents + 3]; // Index 3 for alpha in RGBA
+
+            //     if (alpha < 255) {
+            //         hasPartialTransparency = true;
+            //         break;
+            //     }
+            // }
+
             MagicRed::Rendering::TextureLoadingData textureLoadingData = {
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now

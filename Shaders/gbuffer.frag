@@ -27,12 +27,12 @@ void main() {
 #if DEBUG_VERTEX_COLORS
     vec3 diffuseTexColor = fragColor.rgb;
 #else
-    vec3 diffuseTexColor = texture(sampler2D(textures[materialData.diffuseTex], linearSampler), textureCoords).rgb;
+    vec4 diffuseTexColor = texture(sampler2D(textures[materialData.diffuseTex], linearSampler), textureCoords);
 #endif
     
     vec3 metallicRoughnessColor = texture(sampler2D(textures[materialData.metallicRoughnessTex], linearSampler), textureCoords).rgb;
 
-    outColor = vec4(diffuseTexColor, 1.0);
+    outColor = diffuseTexColor;
     outNormal.rgb = normalize(fragWorldNormal) * 0.5 + 0.5; // Map from [-1, 1] to [0, 1]
     outMetallicRoughness.rg = metallicRoughnessColor.gb;
 }
