@@ -34,13 +34,11 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
     vec3 diffuse = diffuseTexColor * difference * lightColor;
 
 
-    // Specular
+    // Specular (Blinn)
     float specularStrength = 0.5;
     vec3 viewDir = normalize(pushConstants.sceneData.cameraWorldPosition.xyz - fragWorldPos);
     vec3 halfwayDir = normalize(fragToLightDir + viewDir);
     float specularDifference = pow(max(dot(norm, halfwayDir), 0.0), 32);
-    // vec3 reflectDir = reflect(-fragToLightDir, norm);
-    // float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * specularDifference * lightColor;
 
     vec3 result = (ambient + diffuse + specular);
@@ -49,28 +47,28 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
 
 vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor, vec2 metallicRoughnessColor, vec3 sampledNormal, vec3 fragWorldPos)
 {
-    vec3 lightColor = pushConstants.sceneData.pointLights.data[pointLightIndex].color;
+    vec3 lightAmbient = pushConstants.sceneData.pointLights.data[pointLightIndex].ambient;
+    vec3 lightDiffuse = pushConstants.sceneData.pointLights.data[pointLightIndex].diffuse;
+    vec3 lightSpecular = pushConstants.sceneData.pointLights.data[pointLightIndex].specular;
 
     // Ambient
     float ambientStrength = 0.1;
-    vec3 ambient = diffuseTexColor * ambientStrength * lightColor;
+    vec3 ambient = diffuseTexColor * ambientStrength * lightAmbient;
 
     // Diffuse
     vec3 fragToLight = pushConstants.sceneData.pointLights.data[pointLightIndex].worldSpacePosition - fragWorldPos;
     vec3 fragToLightDir = normalize(fragToLight);
     vec3 norm = normalize(sampledNormal);
     float difference = max(dot(fragToLightDir, norm), 0.0);
-    vec3 diffuse = diffuseTexColor * difference * lightColor;
+    vec3 diffuse = diffuseTexColor * difference * lightDiffuse;
 
 
-    // Specular
+    // Specular (Blinn)
     float specularStrength = 0.5;
     vec3 viewDir = normalize(pushConstants.sceneData.cameraWorldPosition.xyz - fragWorldPos);
     vec3 halfwayDir = normalize(fragToLightDir + viewDir);
     float specularDifference = pow(max(dot(norm, halfwayDir), 0.0), 32);
-    // vec3 reflectDir = reflect(-fragToLightDir, norm);
-    // float specularDifference = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * specularDifference * lightColor;
+    vec3 specular = specularStrength * specularDifference * lightSpecular;
 
     float fragToLightDist = length(fragToLight);
 

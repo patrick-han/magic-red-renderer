@@ -6,8 +6,9 @@
 
 struct PointLight {
     vec3 worldSpacePosition;
-    float intensity;
-    vec3 color;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
     float constantAttenuation;
     float linearAttenuation;
     float quadraticAttenuation;

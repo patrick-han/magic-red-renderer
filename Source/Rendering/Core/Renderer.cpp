@@ -110,8 +110,8 @@ namespace MagicRed::Rendering
 
 
         // Point lights
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), 1.0f, glm::vec3(1.0f, 223.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), 1.0f, glm::vec3(45.0f/255.0f, 25.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 223.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(45.0f/255.0f, 25.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
 
         if (m_CPUPointLights.size() > 0)
         {
@@ -1115,14 +1115,14 @@ namespace MagicRed::Rendering
             ImGui::SliderFloat("rm", &rm,  2.0f * -3.14f, 2.0f *3.14f);
             // for (auto& renderMeshComponent : m_sceneRenderMeshComponents)
             // {
-            if (m_sceneRenderMeshComponents.size() > 0)
-            {
-            RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
-                    glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
-                    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-                    glm::mat4 scale = glm::scale(rotate, glm::vec3(1.0f, 1.0f, 1.0f));
-                    renderMeshComponent.m_transformMatrix = scale;
-            }
+            // if (m_sceneRenderMeshComponents.size() > 0)
+            // {
+            // RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
+            //         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
+            //         glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
+            //         glm::mat4 scale = glm::scale(rotate, glm::vec3(1.0f, 1.0f, 1.0f));
+            //         renderMeshComponent.m_transformMatrix = scale;
+            // }
             // }
             ImGui::End();
             ImGui::Render();
