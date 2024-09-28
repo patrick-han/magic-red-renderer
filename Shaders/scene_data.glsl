@@ -6,13 +6,12 @@
 
 struct PointLight {
     vec3 worldSpacePosition;
-    float constantAttenuation;
     vec3 ambient;
-    float linearAttenuation;
     vec3 diffuse;
-    float quadraticAttenuation;
     vec3 specular;
-    // float padding;
+    float constantAttenuation;
+    float linearAttenuation;
+    float quadraticAttenuation;
 };
 
 struct DirectionalLight {

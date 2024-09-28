@@ -669,13 +669,13 @@ namespace MagicRed::Rendering
     void Renderer::update_lights(uint32_t frameInFlightIndex) {
         if (m_pointLightsExist)
         {
-            int lightCircleRadius = 2;
-            float lightCircleSpeed = 0.02f;
-            m_CPUPointLights[0].worldSpacePosition = glm::vec3(
-                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
-                0.0,
-                lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
-            );
+            //int lightCircleRadius = 2;
+            //float lightCircleSpeed = 0.02f;
+            //m_CPUPointLights[0].worldSpacePosition = glm::vec3(
+            //    lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
+            //    0.0,
+            //    lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
+            //);
             // m_CPUPointLights[1].worldSpacePosition = glm::vec3(
             //     lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
             //     1.0,
