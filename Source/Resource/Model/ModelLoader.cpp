@@ -37,55 +37,11 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 
 namespace MagicRed::Resource
 {
-    void CPUModelLoader::load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial)
-    {
+    std::string GetTextureNameFromAssimpType(aiMaterial* material, aiTextureType textureType) {
         aiString str;
         material->GetTexture(textureType, 0, &str);
         const std::string textureName(str.C_Str());
-
-        GPUTextureId* meshMaterialTextureIdToSet = nullptr;
-
-        switch(textureType)
-        {
-            case aiTextureType_BASE_COLOR:
-                meshMaterialTextureIdToSet = &meshMaterial.diffuseTextureId;
-                break;
-            case aiTextureType_METALNESS:
-                meshMaterialTextureIdToSet = &meshMaterial.metallicRoughnessTextureId;
-                break;
-            case aiTextureType_NORMALS:
-                meshMaterialTextureIdToSet = &meshMaterial.normalTextureId;
-                break;
-            case aiTextureType_EMISSIVE:
-                meshMaterialTextureIdToSet = &meshMaterial.emissiveTextureId;
-                break;
-            default:
-                MRCERR("Tried to load non-standard aiTextureType!");
-                exit(1);
-        }
-
-        // Now, we actually load the texture file if it hasn't already been loaded and uploaded to the GPU
-        if (m_textureFileToGuidMapRef.count(textureName) == 0)
-        {
-            GUID newTextureGuid = GUID();
-            // New unique texture
-            std::filesystem::path texturePath = m_filePath.parent_path() / std::filesystem::path(textureName);
-            int width, height, numberComponents;
-            unsigned char *data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
-
-            MagicRed::Rendering::TextureLoadingData textureLoadingData = {
-                .data = data,
-                .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
-            };
-            m_textureFileToGuidMapRef.insert({textureName, newTextureGuid});
-            *meshMaterialTextureIdToSet  = m_pRenderer->UploadTexture(textureLoadingData, newTextureGuid);
-            stbi_image_free(data);
-        }
-        else // Otherwise retrieve the existing guid...
-        {
-            GUID textureGuid  = m_textureFileToGuidMapRef[textureName];
-            *meshMaterialTextureIdToSet  = m_pRenderer->GetGPUTextureIdByGuid(textureGuid);
-        }
+        return textureName;
     }
 
     void CPUModelLoader::load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial)
@@ -250,7 +206,7 @@ namespace MagicRed::Resource
                     // if (isCompressed)
                     if (materialDiffuseCount > 0)
                     {
-                        load_embedded_texture_data(material, scene, aiTextureType_BASE_COLOR, meshMaterial);   
+                        load_embedded_texture_data(material, scene, aiTextureType_BASE_COLOR, meshMaterial);
                     }
                     else
                     {
@@ -325,36 +281,32 @@ namespace MagicRed::Resource
                     // ]
                     // }
 
-                    if (materialDiffuseCount > 0)
-                    {
-                        load_texture_from_filename(material, aiTextureType_BASE_COLOR, meshMaterial);
+                    if (materialDiffuseCount > 0) {
+                        const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_BASE_COLOR)};
+                        meshMaterial.diffuseTextureId = m_textureLoader.LoadTextureFromFile(m_filePath.parent_path() / std::filesystem::path(textureName));
                     }
-                    else
-                    {
+                    else {
                         meshMaterial.diffuseTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_missingDiffuseTextureGuid);
                     }
-                    if (materialMetallicRoughnessCount > 0)
-                    {
-                        load_texture_from_filename(material, aiTextureType_METALNESS, meshMaterial);
+                    if (materialMetallicRoughnessCount > 0) {
+                        const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_METALNESS)};
+                        meshMaterial.metallicRoughnessTextureId = m_textureLoader.LoadTextureFromFile(m_filePath.parent_path() / std::filesystem::path(textureName));
                     }
-                    else
-                    {
+                    else {
                         meshMaterial.metallicRoughnessTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
-                    if (materialNormalCount > 0)
-                    {
-                        load_texture_from_filename(material, aiTextureType_NORMALS, meshMaterial);
+                    if (materialNormalCount > 0) {
+                        const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_NORMALS)};
+                        meshMaterial.normalTextureId = m_textureLoader.LoadTextureFromFile(m_filePath.parent_path() / std::filesystem::path(textureName));
                     }
-                    else
-                    {
+                    else {
                         meshMaterial.normalTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
-                    if (materialEmissiveCount > 0)
-                    {
-                        load_texture_from_filename(material, aiTextureType_EMISSIVE, meshMaterial);
+                    if (materialEmissiveCount > 0) {
+                        const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_EMISSIVE)};
+                        meshMaterial.emissiveTextureId = m_textureLoader.LoadTextureFromFile(m_filePath.parent_path() / std::filesystem::path(textureName));
                     }
-                    else
-                    {
+                    else {
                         meshMaterial.emissiveTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_pRenderer->m_defaultTexturePlaceholderGuid);
                     }
                 }
