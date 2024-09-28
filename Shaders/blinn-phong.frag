@@ -21,10 +21,7 @@ layout (set = 1, binding = 3) uniform texture2D depthBuffer; // For reconstructi
 
 layout (set = 1, binding = 4) uniform texture2D directionalLightShadowMap;
 
-vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRoughnessColor, vec3 sampledNormal, vec3 fragWorldPos)
-{
-    vec3 lightColor = vec3(pushConstants.sceneData.directionalLight.power); // TODO: Directional light color?
-
+float calculateShadow(vec3 fragWorldPos) {
     vec4 fragDirLightSpacePos = pushConstants.sceneData.directionalLightViewProjection * vec4(fragWorldPos, 1.0);
     vec3 shadowSamplePos = fragDirLightSpacePos.xyz / fragDirLightSpacePos.w;
     shadowSamplePos.xy *= 0.5;
@@ -37,6 +34,13 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
     if (shadowMapDepth < (currentDepth - bias)) {
         inShadow = 1.0;
     }
+    return inShadow;
+}
+
+vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRoughnessColor, vec3 sampledNormal, vec3 fragWorldPos)
+{
+    vec3 lightColor = vec3(pushConstants.sceneData.directionalLight.power); // TODO: Directional light color?
+    float inShadow = calculateShadow(fragWorldPos);
 
     // Ambient
     float ambientStrength = 0.1;
