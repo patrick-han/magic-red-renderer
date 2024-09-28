@@ -16,7 +16,7 @@ namespace MagicRed::Rendering
         RenderTextureCache(RenderTextureCache&&) = delete;
         RenderTextureCache& operator=(RenderTextureCache&&) = delete;
 
-        [[nodiscard]] GPUTextureId add_render_texture(const GfxDevice& gfxDevice, VkFormat format, VkImageCreateInfo imageCreateInfo);
+        [[nodiscard]] GPUTextureId add_render_texture(const GfxDevice& gfxDevice, VkImageCreateInfo imageCreateInfo);
 
         [[nodiscard]] inline const GPUTexture& get_render_texture(GPUTextureId id) const
         {

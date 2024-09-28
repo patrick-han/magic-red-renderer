@@ -384,14 +384,15 @@ namespace MagicRed::Rendering
 
         // Shadowmap(s)
         {
-            VkFormat shadowMapRTFormat = VK_FORMAT_D16_UNORM;
+            // VkFormat shadowMapRTFormat = VK_FORMAT_D16_UNORM;
+            VkFormat shadowMapRTFormat = VK_FORMAT_D32_SFLOAT;
             VkImageCreateInfo shadowMapRTImage_ci = image_create_info(shadowMapRTFormat
                 , {SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, 1}
                 , VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT 
                 | VK_IMAGE_USAGE_SAMPLED_BIT // Lighting alternative read in
                 , VK_IMAGE_TYPE_2D
                 );
-            m_directionalShadowMapRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, shadowMapRTFormat, shadowMapRTImage_ci);
+            m_directionalShadowMapRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, shadowMapRTImage_ci);
         }
 
         // G Buffer
@@ -406,7 +407,7 @@ namespace MagicRed::Rendering
                 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,    // TODO: Copy from to swapchain
                 VK_IMAGE_TYPE_2D
             );
-            m_albedoRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, albedoRTFormat, albedoRTImage_ci);
+            m_albedoRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, albedoRTImage_ci);
 
             VkFormat worldNormalsRTFormat = VK_FORMAT_A2R10G10B10_UNORM_PACK32;
             VkImageCreateInfo worldNormalsRTImage_ci = image_create_info(worldNormalsRTFormat, fullFrameBufferExtent,
@@ -415,7 +416,7 @@ namespace MagicRed::Rendering
                 // | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, // Input to deferred lighting // TODO: subpass
                 VK_IMAGE_TYPE_2D
             );
-            m_worldNormalsRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, worldNormalsRTFormat, worldNormalsRTImage_ci);
+            m_worldNormalsRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, worldNormalsRTImage_ci);
 
             VkFormat metallicRoughnessRTFormat = VK_FORMAT_R8G8_UNORM;
             VkImageCreateInfo metallicRoughnessRTImage_ci = image_create_info(metallicRoughnessRTFormat, fullFrameBufferExtent,
@@ -424,7 +425,7 @@ namespace MagicRed::Rendering
                 // | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, // Input to deferred lighting // TODO: subpass
                 VK_IMAGE_TYPE_2D
             );
-            m_metallicRoughnessRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, metallicRoughnessRTFormat, metallicRoughnessRTImage_ci);
+            m_metallicRoughnessRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, metallicRoughnessRTImage_ci);
         }
 
         // Lighting
@@ -435,7 +436,7 @@ namespace MagicRed::Rendering
                 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,    // TODO: Copy from to swapchain
                 VK_IMAGE_TYPE_2D
             );
-            m_lightingRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, lightingRTFormat, lightingRTImage_ci);
+            m_lightingRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, lightingRTImage_ci);
         }
     }
 
@@ -447,7 +448,8 @@ namespace MagicRed::Rendering
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
                 .pNext = nullptr,
                 .viewMask = 0,
-                .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
+                // .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
+                .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
             };
             m_pShadowMapStage = std::make_unique<ShadowMapStage>(m_GfxDevice, &pipelineRenderingCI);
         }
