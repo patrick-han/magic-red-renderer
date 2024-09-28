@@ -21,14 +21,15 @@ layout (set = 1, binding = 3) uniform texture2D depthBuffer; // For reconstructi
 
 layout (set = 1, binding = 4) uniform texture2D directionalLightShadowMap;
 
-float calculateShadow(vec3 fragWorldPos) {
+float calculateShadow(vec3 norm, vec3 fragWorldPos) {
     vec4 fragDirLightSpacePos = pushConstants.sceneData.directionalLightViewProjection * vec4(fragWorldPos, 1.0);
     vec3 shadowSamplePos = fragDirLightSpacePos.xyz / fragDirLightSpacePos.w;
     shadowSamplePos.xy *= 0.5;
     shadowSamplePos.xy += 0.5; // UV
 
     float inShadow = 0.0;
-    float bias = 0.005;
+    vec3 lightDir = normalize(pushConstants.sceneData.directionalLight.direction);
+    float bias = max(0.005, 0.05 * (1.0 - dot(norm, lightDir))); // Goes from 0.005 to 0.05 as the angle between the light and the normal increases
     float currentDepth = fragDirLightSpacePos.z;
     float shadowMapDepth = texture(sampler2D(directionalLightShadowMap, linearSampler), shadowSamplePos.xy).r;
     if (shadowMapDepth < (currentDepth - bias)) {
@@ -39,8 +40,9 @@ float calculateShadow(vec3 fragWorldPos) {
 
 vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRoughnessColor, vec3 sampledNormal, vec3 fragWorldPos)
 {
+    vec3 norm = normalize(sampledNormal);
     vec3 lightColor = vec3(pushConstants.sceneData.directionalLight.power); // TODO: Directional light color?
-    float inShadow = calculateShadow(fragWorldPos);
+    float inShadow = calculateShadow(norm, fragWorldPos);
 
     // Ambient
     float ambientStrength = 0.1;
@@ -48,7 +50,6 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
 
     // Diffuse
     vec3 fragToLightDir = normalize(pushConstants.sceneData.directionalLight.direction);
-    vec3 norm = normalize(sampledNormal);
     float difference = max(dot(fragToLightDir, norm), 0.0);
     vec3 diffuse = diffuseTexColor * difference * lightColor;
 
