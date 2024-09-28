@@ -31,7 +31,6 @@ namespace MagicRed::Rendering
         , m_renderTextureCache(_renderTextureCache)
         , m_globalDescriptorPool(_globalDescriptorPool)
         , m_bindlessDescriptorSet(_bindlessDescriptorSet)
-        , m_pipeline(m_gfxDevice)
         {
             {
                 // Build a descriptor set layout
@@ -162,16 +161,26 @@ namespace MagicRed::Rendering
 
             std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = {{_bindlessDescriptorSetLayout, m_lightingDescriptorSetLayout}};
 
-            VertexInputDescription vertexDescription;
-            m_pipeline.BuildPipeline(
-                _pipelineRenderingCreateInfo
-                , m_vertexShaderPath, m_fragmentShaderPath
-                , vertexDescription
-                , m_pushConstantRanges
-                , descriptorSetLayouts
-                , m_extent
-                , false
-                );
+            m_pipeline = GraphicsPipeline::CreateBuilder(m_gfxDevice)
+                .SetRenderingInfo(_pipelineRenderingCreateInfo)
+                .SetShaders(m_vertexShaderPath, m_fragmentShaderPath)
+                .SetVertexDescription(VertexInputDescription::get_default_vertex_description())
+                .SetPushConstantRanges(m_pushConstantRanges)
+                .SetDescriptorSetLayouts(descriptorSetLayouts)
+                .SetExtent(m_extent)
+                .SetBlendEnable(false)
+                .SetCullMode(VK_CULL_MODE_NONE)
+                .Build();
+            // VertexInputDescription vertexDescription;
+            // m_pipeline.BuildPipeline(
+            //     _pipelineRenderingCreateInfo
+            //     , m_vertexShaderPath, m_fragmentShaderPath
+            //     , vertexDescription
+            //     , m_pushConstantRanges
+            //     , descriptorSetLayouts
+            //     , m_extent
+            //     , false
+            //     );
         }
 
     BlinnPhongLightingStage::~BlinnPhongLightingStage() {}

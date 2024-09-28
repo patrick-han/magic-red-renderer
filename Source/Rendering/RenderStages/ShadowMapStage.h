@@ -16,7 +16,7 @@ namespace MagicRed::Rendering
         static constexpr std::array<VkPushConstantRange, 1> m_pushConstantRanges = {ShadowMapPushConstants::range()};
 
     public:
-        // ShadowMapStage() = delete;
+        ShadowMapStage() = delete;
         ShadowMapStage(
             const GfxDevice& _gfxDevice,
             const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo

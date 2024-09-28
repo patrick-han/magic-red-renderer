@@ -16,7 +16,7 @@ namespace MagicRed::Rendering
         static constexpr std::array<VkPushConstantRange, 1> m_pushConstantRanges = {DefaultPushConstants::range()};
 
     public:
-        // GBufferStage() = delete;
+        GBufferStage() = delete;
         GBufferStage(
             const GfxDevice& _gfxDevice,
             const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,

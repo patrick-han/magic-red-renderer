@@ -22,7 +22,7 @@ namespace MagicRed::Rendering
         static constexpr std::array<VkPushConstantRange, 1> m_pushConstantRanges = {DefaultPushConstants::range()};
 
     public:
-        // BlinnPhongLightingStage() = delete;
+        BlinnPhongLightingStage() = delete;
         BlinnPhongLightingStage(
             const GfxDevice& _gfxDevice,
             const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,

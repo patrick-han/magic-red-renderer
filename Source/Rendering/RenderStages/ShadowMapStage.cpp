@@ -10,19 +10,17 @@ namespace MagicRed::Rendering
             const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo
         )
         : StageBase(_gfxDevice)
-        , m_pipeline(m_gfxDevice)
         {
-
-            VertexInputDescription vertexDescription = VertexInputDescription::get_default_vertex_description();
-            m_pipeline.BuildPipeline(
-                _pipelineRenderingCreateInfo
-                , m_vertexShaderPath, m_fragmentShaderPath
-                , vertexDescription
-                , m_pushConstantRanges
-                , {}
-                , m_extent
-                , false
-                );
+            m_pipeline = GraphicsPipeline::CreateBuilder(m_gfxDevice)
+                .SetRenderingInfo(_pipelineRenderingCreateInfo)
+                .SetShaders(m_vertexShaderPath, m_fragmentShaderPath)
+                .SetVertexDescription(VertexInputDescription::get_default_vertex_description())
+                .SetPushConstantRanges(m_pushConstantRanges)
+                .SetDescriptorSetLayouts({})
+                .SetExtent(m_extent)
+                .SetBlendEnable(false)
+                .SetCullMode(VK_CULL_MODE_BACK_BIT) // Fix peter panning
+                .Build();
         }
 
     ShadowMapStage::~ShadowMapStage() {}
