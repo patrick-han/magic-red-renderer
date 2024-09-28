@@ -12,20 +12,20 @@ namespace MagicRed::Rendering
         VkDescriptorSet _bindlessDescriptorSet)
         : StageBase(_gfxDevice)
         , m_bindlessDescriptorSet(_bindlessDescriptorSet)
-        , m_pipeline(m_gfxDevice)
         {
 
             VertexInputDescription vertexDescription = VertexInputDescription::get_default_vertex_description();
             std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = {{_bindlessDescriptorSetLayout}};
-            m_pipeline.BuildPipeline(
-                _pipelineRenderingCreateInfo
-                , m_vertexShaderPath, m_fragmentShaderPath
-                , vertexDescription
-                , m_pushConstantRanges
-                , descriptorSetLayouts
-                , m_extent
-                , false
-                );
+            m_pipeline = GraphicsPipeline::CreateBuilder(m_gfxDevice)
+                .SetRenderingInfo(_pipelineRenderingCreateInfo)
+                .SetShaders(m_vertexShaderPath, m_fragmentShaderPath)
+                .SetVertexDescription(VertexInputDescription::get_default_vertex_description())
+                .SetPushConstantRanges(m_pushConstantRanges)
+                .SetDescriptorSetLayouts(descriptorSetLayouts)
+                .SetExtent(m_extent)
+                .SetBlendEnable(false)
+                .SetCullMode(VK_CULL_MODE_BACK_BIT)
+                .Build();
         }
 
     GBufferStage::~GBufferStage() {}
