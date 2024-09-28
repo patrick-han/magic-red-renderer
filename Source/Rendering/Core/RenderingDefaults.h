@@ -8,6 +8,6 @@ namespace MagicRed::Rendering
     inline constexpr VkClearValue DEFAULT_CLEAR_VALUE_DEPTH = {{{1.0f, 0}}};
     inline constexpr VkViewport DEFAULT_VIEWPORT_FULLSCREEN = { 0.0f, 0.0f, static_cast<float>(WINDOW_WIDTH), static_cast<float>(WINDOW_HEIGHT), 0.0f, 1.0f };
     inline constexpr VkRect2D DEFAULT_SCISSOR_FULLSCREEN = { {0, 0}, {WINDOW_WIDTH, WINDOW_HEIGHT}};
-    inline constexpr VkViewport DEFAULT_VIEWPORT_SHADOWMAP = { 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f };
-    inline constexpr VkRect2D DEFAULT_SCISSOR_SHADOWMAP = { {0, 0}, {1024, 1024}};
+    inline constexpr VkViewport DEFAULT_VIEWPORT_SHADOWMAP = { 0.0f, 0.0f, static_cast<float>(SHADOWMAP_RESOLUTION), static_cast<float>(SHADOWMAP_RESOLUTION), 0.0f, 1.0f };
+    inline constexpr VkRect2D DEFAULT_SCISSOR_SHADOWMAP = { {0, 0}, {SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION}};
 }

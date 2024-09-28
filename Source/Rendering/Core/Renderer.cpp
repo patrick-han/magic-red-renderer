@@ -45,7 +45,7 @@ namespace MagicRed::Rendering
     static uint64_t currentFrameTick = 0;
 
     // Camera
-    static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -2.0f);
+    static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
     static glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     static glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     static Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
@@ -103,9 +103,9 @@ namespace MagicRed::Rendering
 
     void Renderer::init_lights() {
         // Directional Light
-        m_directionalLight.direction.x = -0.1f;
-        m_directionalLight.direction.y = -1.0f;
-        m_directionalLight.direction.z = -0.1f;
+        m_directionalLight.direction.x = 0.319f;
+        m_directionalLight.direction.y = 1.0f;
+        m_directionalLight.direction.z = 1.0f;
         m_directionalLight.power = 1.0f;
 
 
@@ -698,15 +698,17 @@ namespace MagicRed::Rendering
         projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
         m_CPUSceneData.projection = projection;
 
-        float near_plane = 1.0f, far_plane = 30.0f;  // Increased far plane
-        float ortho_size = 10.0f;  // Adjust based on your scene size
+        float near_plane = rx, far_plane = ry;
+        float ortho_size = rz;  // Adjust based on your scene size
         glm::mat4 directionalLightProjection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
         directionalLightProjection[1][1] *= -1;
-        glm::mat4 directionalLightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), 
-                                                    glm::vec3( 0.0f, 0.0f,  0.0f),
-                                                    glm::vec3( 0.0f, 1.0f,  0.0f));
-        // glm::mat4 directionalLightView = glm::lookAt(-m_directionalLight.direction, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 directionalLightView = glm::lookAt(
+            m_directionalLight.direction, 
+            glm::vec3(0.0f, 0.0f, 0.0f), 
+            glm::vec3(0.0f, 1.0f, 0.0f));
         m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
+        //  m_CPUSceneData.view = directionalLightView;
+        //  m_CPUSceneData.projection = directionalLightProjection;
 
         m_CPUSceneData.cameraWorldPosition = camera.get_world_position();
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;
@@ -1180,9 +1182,9 @@ namespace MagicRed::Rendering
             ImGui::SliderFloat("Directional Light z", &m_directionalLight.direction.z, -1.0f, 1.0f);
             ImGui::SliderFloat("Directional Light power", &m_directionalLight.power,  0.0f, 1.0f);
 
-            ImGui::SliderFloat("rx", &rx,  -1.0f, 1.0f);
-            ImGui::SliderFloat("ry", &ry,  -1.0f, 1.0f);
-            ImGui::SliderFloat("rz", &rz,  -1.0f, 1.0f);
+            ImGui::SliderFloat("nera plane", &rx,  -1000.0f, 1000.000f);
+            ImGui::SliderFloat("far plane", &ry,  -1000.0f, 1000.000f);
+            ImGui::SliderFloat("ortho_size", &rz,  -1000.0f, 1000.0f);
             ImGui::SliderFloat("rm", &rm,  2.0f * -3.14f, 2.0f *3.14f);
             // for (auto& renderMeshComponent : m_sceneRenderMeshComponents)
             // {

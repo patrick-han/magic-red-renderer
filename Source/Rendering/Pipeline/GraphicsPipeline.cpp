@@ -51,15 +51,13 @@ namespace MagicRed::Rendering
         /*rasterizeDiscard*/ VK_FALSE, VK_POLYGON_MODE_FILL, VkCullModeFlags(),
         /*frontFace*/ VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE, {}, {}, {}, 1.0f };
 
-        VkPipelineDepthStencilStateCreateInfo depthStencil = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, nullptr, VkPipelineDepthStencilStateCreateFlags(),
-            VK_TRUE, // Enable depth test by default
-            VK_TRUE, // Enable depth writes by default
-            // bDepthTest ? VK_TRUE : VK_FALSE,
-            // bDepthWrite ? VK_TRUE : VK_FALSE,
-            VK_COMPARE_OP_LESS,
-            VK_FALSE, // depth bounds test
-            VK_FALSE, // stencil
-            {}, {}, {}, {}
+        VkPipelineDepthStencilStateCreateInfo depthStencil = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .depthTestEnable = VK_TRUE,
+            .depthWriteEnable = VK_TRUE,
+            .depthCompareOp = VK_COMPARE_OP_LESS,
+            .depthBoundsTestEnable = VK_FALSE,
+            .stencilTestEnable = VK_FALSE
         };
 
         VkPipelineMultisampleStateCreateInfo multisampling = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, nullptr, VkPipelineMultisampleStateCreateFlags(), VK_SAMPLE_COUNT_1_BIT, VK_FALSE, 1.0 , {}, {}, {}};

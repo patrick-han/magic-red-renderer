@@ -9,13 +9,15 @@ namespace MagicRed::Rendering
     {
         glm::mat4 view;
         glm::mat4 projection;
+        glm::mat4 directionalLightViewProjection;
         
         glm::vec3 cameraWorldPosition;
-        VkDeviceAddress lightBufferAddress;
         int numPointLights;
+        VkDeviceAddress lightBufferAddress;
+        
         DirectionalLight directionalLight;
         VkDeviceAddress materialBufferAddress;
-        glm::mat4 directionalLightViewProjection;
+        
     };
 }
 

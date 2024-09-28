@@ -19,4 +19,5 @@ layout (push_constant) uniform PushConstants
 
 void main() {
     gl_Position = pushConstants.sceneData.directionalLightViewProjection * pushConstants.modelMatrix * vec4(vPosition, 1.0);
+    // gl_Position = pushConstants.sceneData.view * pushConstants.modelMatrix * vec4(vPosition, 1.0);
 }
