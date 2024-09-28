@@ -29,14 +29,8 @@ namespace MagicRed::Resource
         CPUModelLoader(
             MagicRed::Rendering::Renderer* _pRenderer
             , bool _texturesEmbedded
-            , std::string _filePath
-            , std::unordered_map<std::string, GUID>& _textureFileToGuidMapRef
-        );
-        CPUModelLoader(
-            MagicRed::Rendering::Renderer* _pRenderer
-            , bool _texturesEmbedded
             , std::filesystem::path _filePath
-            , std::unordered_map<std::string, GUID>& _textureFileToGuidMapRef
+            , std::unordered_map<std::filesystem::path, GUID>& _textureFileToGuidMapRef
         );
         void LoadImmediately();
         std::vector<MagicRed::Rendering::CPUMesh> m_cpuMeshes;
@@ -54,9 +48,8 @@ namespace MagicRed::Resource
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
         bool m_texturesEmbedded;
-        const std::string m_filePath; // TODO
-        const std::filesystem::path m_path;
-        std::unordered_map<std::string, GUID>& m_textureFileToGuidMapRef;
+        const std::filesystem::path m_filePath;
+        std::unordered_map<std::filesystem::path, GUID>& m_textureFileToGuidMapRef;
 
         // Mapping from assimp mesh material index to MaterialId to keep track
         // of materials that have already been loaded while parsing assimp structure

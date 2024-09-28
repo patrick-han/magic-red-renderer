@@ -7,7 +7,7 @@ DISABLE_CLANG_WARNING("-Wmissing-field-initializers")
 DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <Common/Compiler/Unused.h>
 
-#include "Model.h"
+#include "ModelLoader.h"
 #include <Rendering/Texture/TextureCache.h>
 #include <Rendering/Material/MaterialCache.h>
 #include <Rendering/Material/Material.h>
@@ -33,11 +33,6 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <glm/gtx/matrix_decompose.hpp>
 
 #include <Resource/GUID.h>
-
-#include <fstream>
-#include <External/json.hpp>
-#include <Resource/AssetMaker.h>
-using json = nlohmann::json;
 
 
 namespace MagicRed::Resource
@@ -68,61 +63,22 @@ namespace MagicRed::Resource
                 MRCERR("Tried to load non-standard aiTextureType!");
                 exit(1);
         }
-        std::filesystem::path sourceFilePath = m_path.parent_path() / std::filesystem::path(textureName);
-        std::filesystem::path assetFilePath = m_path.parent_path() / std::filesystem::path(textureName);
-        assetFilePath += ".asset";
-
-        std::unique_ptr<GUID> pTextureGuid;
-
-        // First check if the texture has been previously imported
-        if(!std::filesystem::exists(assetFilePath))
-        {
-            // If not we need to create a new .asset
-            pTextureGuid = std::make_unique<GUID>();
-
-            // TEMP: TODO
-            AssetMaker textureAssetMaker(*pTextureGuid, AssetType::Texture, sourceFilePath.string());
-            // textureAssetMaker.Write(assetFilePath);
-        }
-        // Retrieve its guid if so
-        else
-        {
-            std::ifstream jsonFileStream(assetFilePath);
-            json jsonData = json::parse(jsonFileStream);
-            if (std::strcmp(jsonData["assetType"].dump().c_str(), "\"texture\""))
-            {
-                MRLOG("Tried to load a non texture assetType");
-                exit(1); // TODO
-            }
-
-            GUID guid(jsonData["guid"]);
-            pTextureGuid = std::make_unique<GUID>(guid);
-        }
 
         // Now, we actually load the texture file if it hasn't already been loaded and uploaded to the GPU
         if (m_textureFileToGuidMapRef.count(textureName) == 0)
         {
+            GUID newTextureGuid = GUID();
             // New unique texture
-            std::filesystem::path texturePath = m_path.parent_path() / std::filesystem::path(textureName);
+            std::filesystem::path texturePath = m_filePath.parent_path() / std::filesystem::path(textureName);
             int width, height, numberComponents;
             unsigned char *data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
-
-            // bool hasPartialTransparency = false;
-            // for (int i = 0; i < width * height; i++) {
-            //     unsigned char alpha = data[i * numberComponents + 3]; // Index 3 for alpha in RGBA
-
-            //     if (alpha < 255) {
-            //         hasPartialTransparency = true;
-            //         break;
-            //     }
-            // }
 
             MagicRed::Rendering::TextureLoadingData textureLoadingData = {
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
-            m_textureFileToGuidMapRef.insert({textureName, *pTextureGuid});
-            *meshMaterialTextureIdToSet  = m_pRenderer->UploadTexture(textureLoadingData, *pTextureGuid);
+            m_textureFileToGuidMapRef.insert({textureName, newTextureGuid});
+            *meshMaterialTextureIdToSet  = m_pRenderer->UploadTexture(textureLoadingData, newTextureGuid);
             stbi_image_free(data);
         }
         else // Otherwise retrieve the existing guid...
@@ -137,7 +93,7 @@ namespace MagicRed::Resource
         aiString embeddedTextureFile;
         material->GetTexture(textureType, 0, &embeddedTextureFile);
         const aiTexture* texture = scene->GetEmbeddedTexture(embeddedTextureFile.C_Str());
-        std::string textureName = m_path.filename().replace_extension().string();
+        std::string textureName = m_filePath.filename().replace_extension().string();
 
         GPUTextureId* meshMaterialTextureIdToSet = nullptr;
 
@@ -450,33 +406,17 @@ namespace MagicRed::Resource
         }
     }
 
-    CPUModelLoader::CPUModelLoader(
-        MagicRed::Rendering::Renderer* _pRenderer
-        , bool _texturesEmbedded
-        , std::string _filePath
-        , std::unordered_map<std::string, GUID>& _textureFileToGuidMapRef
-    ) 
-    : m_pRenderer(_pRenderer)
-    , m_texturesEmbedded(_texturesEmbedded)
-    , m_filePath(_filePath)
-    , m_path(_filePath)
-    , m_textureFileToGuidMapRef(_textureFileToGuidMapRef)
-    {
-    }
-
      CPUModelLoader::CPUModelLoader(
         MagicRed::Rendering::Renderer* _pRenderer
         , bool _texturesEmbedded
         , std::filesystem::path _filePath
-        , std::unordered_map<std::string, GUID>& _textureFileToGuidMapRef
+        , std::unordered_map<std::filesystem::path, GUID>& _textureFileToGuidMapRef
     ) 
     : m_pRenderer(_pRenderer)
     , m_texturesEmbedded(_texturesEmbedded)
-    , m_filePath(_filePath.string())
-    , m_path(_filePath)
+    , m_filePath(_filePath)
     , m_textureFileToGuidMapRef(_textureFileToGuidMapRef)
-    {
-    }
+    {}
 
     void CPUModelLoader::LoadImmediately() {
         Assimp::Importer importer;

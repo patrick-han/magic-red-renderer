@@ -23,7 +23,7 @@
 #include <Camera/Camera.h>
 #include <Common/Log.h>
 #include <Rendering/Mesh/Mesh.h>
-#include <Resource/Model/Model.h>
+#include <Resource/Model/ModelLoader.h>
 
 #include <Rendering/Image/Image.h>
 #include <Rendering/Wrappers/ImageMemoryBarrier.h>

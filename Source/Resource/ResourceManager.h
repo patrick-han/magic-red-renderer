@@ -26,18 +26,15 @@ namespace MagicRed::Resource
         void Startup/*RegisterRenderer*/(MagicRed::Rendering::Renderer* _pRenderer);
         void SetProjectDirectory(const std::filesystem::path& projectDirectory);
 
-        // Import is used for models not imported already. i.e. they do not yet have an .asset file associated with them already
         void ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded);
 
     private:
-        // In contrast, Load is used for models that already have an .asset
-        void LoadModel(std::filesystem::path assetFilePath);
         MagicRed::Rendering::Renderer* m_pRenderer {nullptr};
 
         std::filesystem::path m_projectDirectory;
 
         // TODO: Eventually textures should be compiled on disk with permanent guids assigned?
-        std::unordered_map<std::string, GUID> m_fileToGuidMap;
+        std::unordered_map<std::filesystem::path, GUID> m_fileToGuidMap;
 
 
     };
