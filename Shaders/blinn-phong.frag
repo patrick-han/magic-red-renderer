@@ -19,16 +19,31 @@ layout (set = 1, binding = 1) uniform texture2D normalsBuffer;
 layout (set = 1, binding = 2) uniform texture2D metallicRoughnessBuffer;
 layout (set = 1, binding = 3) uniform texture2D depthBuffer; // For reconstructing world space positions
 
+layout (set = 1, binding = 4) uniform texture2D directionalLightShadowMap;
+
 vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRoughnessColor, vec3 sampledNormal, vec3 fragWorldPos)
 {
     vec3 lightColor = vec3(pushConstants.sceneData.directionalLight.power); // TODO: Directional light color?
+
+    vec4 fragDirLightSpacePos = pushConstants.sceneData.directionalLightViewProjection * vec4(fragWorldPos, 1.0);
+    vec3 shadowSamplePos = fragDirLightSpacePos.xyz / fragDirLightSpacePos.w;
+    shadowSamplePos.xy *= 0.5;
+    shadowSamplePos.xy += 0.5; // UV
+
+    float inShadow = 0.0;
+    float bias = 0.005;
+    float currentDepth = fragDirLightSpacePos.z;
+    float shadowMapDepth = texture(sampler2D(directionalLightShadowMap, linearSampler), shadowSamplePos.xy).r;
+    if (shadowMapDepth < (currentDepth - bias)) {
+        inShadow = 1.0;
+    }
 
     // Ambient
     float ambientStrength = 0.1;
     vec3 ambient = diffuseTexColor * ambientStrength * lightColor;
 
     // Diffuse
-    vec3 fragToLightDir = normalize(-pushConstants.sceneData.directionalLight.direction);
+    vec3 fragToLightDir = normalize(pushConstants.sceneData.directionalLight.direction);
     vec3 norm = normalize(sampledNormal);
     float difference = max(dot(fragToLightDir, norm), 0.0);
     vec3 diffuse = diffuseTexColor * difference * lightColor;
@@ -41,7 +56,7 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
     float specularDifference = pow(max(dot(norm, halfwayDir), 0.0), 32);
     vec3 specular = specularStrength * specularDifference * lightColor;
 
-    vec3 result = (ambient + diffuse + specular);
+    vec3 result = (ambient + diffuse + specular) * (1.0 - inShadow);
     return result;
 }
 
@@ -89,9 +104,6 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
 
 void main() {
     // Sample GBuffer
-    // vec3 sampledColor = texture(sampler2D(albedoBuffer, linearSampler), textureCoords).rgb;
-    // vec3 sampledNormal = normalize(texture(sampler2D(normalsBuffer, linearSampler), textureCoords).rgb * 2.0 - 1.0);
-    // vec2 sampledMetallicRoughness = texture(sampler2D(metallicRoughnessBuffer, linearSampler), textureCoords).rg;
     vec3 sampledColor = texelFetch(sampler2D(albedoBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb;
     vec3 sampledNormal = normalize(texelFetch(sampler2D(normalsBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb * 2.0 - 1.0);
     vec2 sampledMetallicRoughness = texelFetch(sampler2D(metallicRoughnessBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rg;

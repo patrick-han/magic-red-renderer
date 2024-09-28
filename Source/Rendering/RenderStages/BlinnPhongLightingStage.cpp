@@ -5,11 +5,13 @@
 
 namespace MagicRed::Rendering
 {
-    static constexpr std::array<DescriptorSetLayoutBinding, 4> lightingDescriptorBindings {{
+    static constexpr std::array<DescriptorSetLayoutBinding, 5> lightingDescriptorBindings {{
         // GBuffer
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
+        // Directional Light Shadowmap
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1}
     }};
 
@@ -22,7 +24,8 @@ namespace MagicRed::Rendering
         const VkDescriptorSet _bindlessDescriptorSet,
         GPUTextureId _albedoRTId,
         GPUTextureId _worldNormalsRTId,
-        GPUTextureId _metallicRoughnessRTId
+        GPUTextureId _metallicRoughnessRTId,
+        GPUTextureId _directionalLightShadowMap
         )
         : StageBase(_gfxDevice)
         , m_renderTextureCache(_renderTextureCache)
@@ -66,8 +69,9 @@ namespace MagicRed::Rendering
 
 
             // Done like this instead of constructing temps in a for loop because of pImageInfo
-            std::vector<VkWriteDescriptorSet> gbufferDescriptorWrites;
+            std::vector<VkWriteDescriptorSet> descriptorWrites;
 
+            // GBuffer
             {
                     VkDescriptorImageInfo albedoImageInfo = {
                         .imageView = m_renderTextureCache.get_render_texture(_albedoRTId).allocatedImage.imageView,
@@ -82,7 +86,7 @@ namespace MagicRed::Rendering
                         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .pImageInfo = &albedoImageInfo
                     };
-                    gbufferDescriptorWrites.push_back(albedoWriteDescriptor);
+                    descriptorWrites.push_back(albedoWriteDescriptor);
             }
             {
                     VkDescriptorImageInfo normalsImageInfo = {
@@ -98,7 +102,7 @@ namespace MagicRed::Rendering
                         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .pImageInfo = &normalsImageInfo
                     };
-                    gbufferDescriptorWrites.push_back(normalsWriteDescriptor);
+                    descriptorWrites.push_back(normalsWriteDescriptor);
             }
             {
                     VkDescriptorImageInfo metallicRoughnessImageInfo = {
@@ -114,7 +118,7 @@ namespace MagicRed::Rendering
                         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .pImageInfo = &metallicRoughnessImageInfo
                     };
-                    gbufferDescriptorWrites.push_back(metallicRoughnessWriteDescriptor);
+                    descriptorWrites.push_back(metallicRoughnessWriteDescriptor);
             }
             {
                     VkDescriptorImageInfo depthImageInfo = {
@@ -130,11 +134,30 @@ namespace MagicRed::Rendering
                         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .pImageInfo = &depthImageInfo
                     };
-                    gbufferDescriptorWrites.push_back(depthWriteDescriptor);
+                    descriptorWrites.push_back(depthWriteDescriptor);
+            }
+
+            // Directional Light Shadowmap
+            {
+                    VkDescriptorImageInfo directionalShadowMapImageInfo = {
+                        .imageView = m_renderTextureCache.get_render_texture(_directionalLightShadowMap).allocatedImage.imageView,
+                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    };
+                    VkWriteDescriptorSet directionalShadowMapWriteDescriptor = {
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = m_lightingDescriptorSet,
+                        .dstBinding = 4,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                        .pImageInfo = &directionalShadowMapImageInfo
+                    };
+                    descriptorWrites.push_back(directionalShadowMapWriteDescriptor);
             }
 
 
-            vkUpdateDescriptorSets(m_gfxDevice, static_cast<uint32_t>(gbufferDescriptorWrites.size()), gbufferDescriptorWrites.data(), 0, nullptr);
+
+            vkUpdateDescriptorSets(m_gfxDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
 
             std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = {{_bindlessDescriptorSetLayout, m_lightingDescriptorSetLayout}};

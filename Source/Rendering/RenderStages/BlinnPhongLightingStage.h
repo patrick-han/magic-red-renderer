@@ -32,7 +32,8 @@ namespace MagicRed::Rendering
             const VkDescriptorSet _bindlessDescriptorSet,
             GPUTextureId _albedoRTId,
             GPUTextureId _worldNormalsRTId,
-            GPUTextureId _metallicRoughnessRTId
+            GPUTextureId _metallicRoughnessRTId,
+            GPUTextureId _directionalLightShadowMap
         );
         ~BlinnPhongLightingStage();
         BlinnPhongLightingStage(const BlinnPhongLightingStage&) = delete;

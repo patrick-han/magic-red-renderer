@@ -103,14 +103,14 @@ namespace MagicRed::Rendering
 
     void Renderer::init_lights() {
         // Directional Light
-        m_directionalLight.direction.x = 0.319f;
-        m_directionalLight.direction.y = 1.0f;
-        m_directionalLight.direction.z = 1.0f;
+        m_directionalLight.direction.x = 0.151f;
+        m_directionalLight.direction.y = 0.919f;
+        m_directionalLight.direction.z = -0.103f;
         m_directionalLight.power = 1.0f;
 
 
         // Point lights
-        // m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
         m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
 
         if (m_CPUPointLights.size() > 0)
@@ -505,6 +505,7 @@ namespace MagicRed::Rendering
                 , m_albedoRTId
                 , m_worldNormalsRTId
                 , m_metallicRoughnessRTId
+                , m_directionalShadowMapRTId
             );
         }
     }
@@ -669,18 +670,18 @@ namespace MagicRed::Rendering
     void Renderer::update_lights(uint32_t frameInFlightIndex) {
         if (m_pointLightsExist)
         {
-            //int lightCircleRadius = 2;
-            //float lightCircleSpeed = 0.02f;
-            //m_CPUPointLights[0].worldSpacePosition = glm::vec3(
-            //    lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
-            //    0.0,
-            //    lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
-            //);
-            // m_CPUPointLights[1].worldSpacePosition = glm::vec3(
-            //     lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
-            //     1.0,
-            //     lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber)
-            // );
+            int lightCircleRadius = 2;
+            float lightCircleSpeed = 0.02f;
+            m_CPUPointLights[0].worldSpacePosition = glm::vec3(
+               lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
+               0.0,
+               lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
+            );
+            m_CPUPointLights[1].worldSpacePosition = glm::vec3(
+                lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
+                1.0,
+                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber)
+            );
 
 
             update_buffer(
@@ -939,6 +940,27 @@ namespace MagicRed::Rendering
                     {},
                     0, nullptr, 0, nullptr,
                     1, &imb4
+                );
+            }
+
+            // Transition shadowmap depth image to sampled image
+            {
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
+                    m_RenderTextureCache.get_render_texture(m_directionalShadowMapRTId).allocatedImage.image,
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_ACCESS_SHADER_READ_BIT,
+                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_IMAGE_ASPECT_DEPTH_BIT
+                );
+                vkCmdPipelineBarrier(
+                    cmdBuffer,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    {},
+                    0, nullptr,
+                    0, nullptr,
+                    1, &imb
                 );
             }
 
