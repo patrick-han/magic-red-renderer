@@ -148,22 +148,26 @@ namespace MagicRed::Rendering
                 // .maxAnisotropy = maxAnisotropy,
             };
         vkCreateSampler(m_GfxDevice, &linearCI, nullptr, &m_linearSampler);
-        VkSamplerCreateInfo nearestCI = {
+        VkSamplerCreateInfo shadowSamplerCI = {
                 .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-                .magFilter = VK_FILTER_NEAREST,
-                .minFilter = VK_FILTER_NEAREST,
-                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                .magFilter = VK_FILTER_LINEAR,
+                .minFilter = VK_FILTER_LINEAR,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE
             };
-        vkCreateSampler(m_GfxDevice, &nearestCI, nullptr, &m_nearestSampler);
+        vkCreateSampler(m_GfxDevice, &shadowSamplerCI, nullptr, &m_shadowSampler);
     }
 
     void Renderer::init_bindless_descriptors() {
         constexpr uint32_t maxBindlessResourceCount = 16536; // Requires MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS
-        constexpr uint32_t maxSamplerCount = 1;
+        constexpr uint32_t maxSamplerCount = 2;
 
         // Create a global descriptor pool, and let it know how many of each descriptor type we want up front
         std::array<VkDescriptorPoolSize, 2> bindlessDescriptorPoolSizes {{
-            { VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplerCount}, // TODO: We'll just have 1 nearest and 1 linear sampler for now
+            { VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplerCount},
             { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxBindlessResourceCount}
         }};
         VkDescriptorPoolCreateInfo poolCreateInfo = {
@@ -218,11 +222,11 @@ namespace MagicRed::Rendering
         vkCreateDescriptorSetLayout(m_GfxDevice, &bindlessSetLayoutCreateInfo, nullptr, &m_bindlessDescriptorSetLayout);
 
         // Allocate the descriptor set
-        uint32_t maxBinding = maxBindlessResourceCount - 1;
+        uint32_t maxBinding = maxBindlessResourceCount;
         VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variableDescriptorCountInfo {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
             .descriptorSetCount = 1,
-            .pDescriptorCounts = &maxBinding // Number of descriptors, -1?
+            .pDescriptorCounts = &maxBinding
         };
         VkDescriptorSetAllocateInfo allocateInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -542,6 +546,8 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::update_bindless_texture_descriptors() {
+        constexpr uint32_t bindlessSamplerBinding = 0;
+        constexpr uint32_t bindlessTextureBinding = 1;
 
         // TODO: should batch things per frame?
 
@@ -559,7 +565,7 @@ namespace MagicRed::Rendering
             textureDescriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             textureDescriptorWrites[i].pNext = nullptr;
             textureDescriptorWrites[i].dstSet = m_bindlessDescriptorSet;
-            textureDescriptorWrites[i].dstBinding = 1;
+            textureDescriptorWrites[i].dstBinding = bindlessTextureBinding;
             textureDescriptorWrites[i].dstArrayElement = i;
             textureDescriptorWrites[i].descriptorCount = 1;
             textureDescriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -574,20 +580,36 @@ namespace MagicRed::Rendering
         VkDescriptorImageInfo linearSamplerInfo = {
             .sampler = m_linearSampler
         };
+        VkDescriptorImageInfo shadowSamplerInfo = {
+            .sampler = m_shadowSampler
+        };
         VkWriteDescriptorSet linearSamplerDescriptorWrite = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .pNext = nullptr,
             .dstSet = m_bindlessDescriptorSet,
-            .dstBinding = 0,
-            .dstArrayElement = {},
+            .dstBinding = bindlessSamplerBinding,
+            .dstArrayElement = 0,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
             .pImageInfo = &linearSamplerInfo,
             .pBufferInfo = nullptr,
             .pTexelBufferView = nullptr
         };
+        VkWriteDescriptorSet shadowSamplerDescriptorWrite = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = m_bindlessDescriptorSet,
+            .dstBinding = bindlessSamplerBinding,
+            .dstArrayElement = 1,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .pImageInfo = &shadowSamplerInfo,
+            .pBufferInfo = nullptr,
+            .pTexelBufferView = nullptr
+        };
+        std::array<VkWriteDescriptorSet, 2> samplerDescriptorWrites = {linearSamplerDescriptorWrite, shadowSamplerDescriptorWrite};
 
-        vkUpdateDescriptorSets(m_GfxDevice, 1, &linearSamplerDescriptorWrite, 0, nullptr);
+        vkUpdateDescriptorSets(m_GfxDevice, static_cast<uint32_t>(samplerDescriptorWrites.size()), samplerDescriptorWrites.data(), 0, nullptr);
     }
 
     void Renderer::init_imgui() {
@@ -1291,8 +1313,8 @@ namespace MagicRed::Rendering
         vkDestroyDescriptorPool(m_GfxDevice, m_globalDescriptorPool, nullptr);
 
 
-        vkDestroySampler(m_GfxDevice, m_linearSampler, nullptr);
-        vkDestroySampler(m_GfxDevice, m_nearestSampler, nullptr);
+       vkDestroySampler(m_GfxDevice, m_linearSampler, nullptr);
+       vkDestroySampler(m_GfxDevice, m_shadowSampler, nullptr);
 
         m_RenderTextureCache.cleanup(m_GfxDevice);
         m_TextureCache.cleanup(m_GfxDevice);

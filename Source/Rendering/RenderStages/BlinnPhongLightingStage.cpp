@@ -171,16 +171,6 @@ namespace MagicRed::Rendering
                 .SetBlendEnable(false)
                 .SetCullMode(VK_CULL_MODE_NONE)
                 .Build();
-            // VertexInputDescription vertexDescription;
-            // m_pipeline.BuildPipeline(
-            //     _pipelineRenderingCreateInfo
-            //     , m_vertexShaderPath, m_fragmentShaderPath
-            //     , vertexDescription
-            //     , m_pushConstantRanges
-            //     , descriptorSetLayouts
-            //     , m_extent
-            //     , false
-            //     );
         }
 
     BlinnPhongLightingStage::~BlinnPhongLightingStage() {}

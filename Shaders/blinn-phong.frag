@@ -11,8 +11,20 @@ layout(location = 0) out vec4 outColor;
 #include "mesh_push_constants.glsl"
 
 // TODO subpasses w/ VK_KHR_dynamic_rendering_local_read
-layout (set = 0, binding = 0) uniform sampler linearSampler;
+// layout (set = 0, binding = 0) uniform sampler linearSampler;
+#define LINEAR_SAMPLER 0
+#define SHADOW_SAMPLER 1
+layout (set = 0, binding = 0) uniform sampler samplers[];
 layout (set = 0, binding = 1) uniform texture2D textures[];
+
+vec4 sampleTextureLinear(texture2D tex, vec2 texCoords) {
+    return texture(sampler2D(tex, samplers[LINEAR_SAMPLER]), texCoords);
+}
+
+vec4 sampleTextureShadow(texture2D tex, vec2 texCoords) {
+    return texture(sampler2D(tex, samplers[SHADOW_SAMPLER]), texCoords);
+}
+
 
 layout (set = 1, binding = 0) uniform texture2D albedoBuffer;
 layout (set = 1, binding = 1) uniform texture2D normalsBuffer;
@@ -31,7 +43,8 @@ float calculateShadow(vec3 norm, vec3 fragWorldPos) {
     vec3 lightDir = normalize(pushConstants.sceneData.directionalLight.direction);
     float bias = max(0.005, 0.05 * (1.0 - dot(norm, lightDir))); // Goes from 0.005 to 0.05 as the angle between the light and the normal increases
     float currentDepth = fragDirLightSpacePos.z;
-    float shadowMapDepth = texture(sampler2D(directionalLightShadowMap, linearSampler), shadowSamplePos.xy).r;
+    // float shadowMapDepth = texture(sampler2D(directionalLightShadowMap, linearSampler), shadowSamplePos.xy).r;
+    float shadowMapDepth = sampleTextureLinear(directionalLightShadowMap, shadowSamplePos.xy).r;
     if (shadowMapDepth < (currentDepth - bias)) {
         inShadow = 1.0;
     }
@@ -109,9 +122,9 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
 
 void main() {
     // Sample GBuffer
-    vec3 sampledColor = texelFetch(sampler2D(albedoBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb;
-    vec3 sampledNormal = normalize(texelFetch(sampler2D(normalsBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb * 2.0 - 1.0);
-    vec2 sampledMetallicRoughness = texelFetch(sampler2D(metallicRoughnessBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rg;
+    vec3 sampledColor = texelFetch(sampler2D(albedoBuffer, samplers[LINEAR_SAMPLER]), ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 sampledNormal = normalize(texelFetch(sampler2D(normalsBuffer, samplers[LINEAR_SAMPLER]), ivec2(gl_FragCoord.xy), 0).rgb * 2.0 - 1.0);
+    vec2 sampledMetallicRoughness = texelFetch(sampler2D(metallicRoughnessBuffer, samplers[LINEAR_SAMPLER]), ivec2(gl_FragCoord.xy), 0).rg;
     float sampledDepth = texelFetch(depthBuffer, ivec2(gl_FragCoord.xy), 0).r;
     // x,y are [0, 1] and so is depth-z [0, 1]
     // sampledDepth = sampledDepth * 2.0 - 1.0; // [-1, 1] // In Vulkan, NDC is [0, 1] in z, unlike OpenGL which expects [-1, 1]

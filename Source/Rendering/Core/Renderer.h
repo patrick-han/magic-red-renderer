@@ -106,7 +106,7 @@ namespace MagicRed::Rendering
 
         // Samplers
         VkSampler m_linearSampler;
-        VkSampler m_nearestSampler;
+        VkSampler m_shadowSampler;
 
         // Imgui
         bool m_bShowRenderingMenu = true;
