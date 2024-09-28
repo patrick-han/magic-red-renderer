@@ -18,6 +18,7 @@
 #include <Rendering/Buffer/Buffer.h>
 #include <Rendering/Core/SceneData.h>
 #include <Rendering/Core/RenderingConfig.h>
+#include <Rendering/Core/BindlessManager.h>
 
 #include <Rendering/RenderStages/ShadowMapStage.h>
 #include <Rendering/RenderStages/GBufferStage.h>
@@ -58,7 +59,6 @@ namespace MagicRed::Rendering
             return m_TextureCache.get_gpu_texture_id_by_guid(guid);
         }
 
-
         // GPUMaterial Cache
         MaterialId AddMaterial(const GPUMaterial& material);
 
@@ -80,14 +80,14 @@ namespace MagicRed::Rendering
 
 
         VkDescriptorPool m_imguiPool;
-        uint32_t m_currentFrame = 0;
+        uint32_t m_currentFrame {0};
 
         std::vector<RenderMeshComponent> m_sceneRenderMeshComponents;
 
         // Lights
         std::vector<PointLight> m_CPUPointLights;
         std::array<AllocatedBuffer, MAX_FRAMES_IN_FLIGHT> m_GPUPointLightsBuffers;
-        bool m_pointLightsExist = false;
+        bool m_pointLightsExist {false};
         DirectionalLight m_directionalLight;
 
         // MaterialData
@@ -98,9 +98,7 @@ namespace MagicRed::Rendering
         std::array<AllocatedBuffer, MAX_FRAMES_IN_FLIGHT> m_GPUSceneDataBuffers;
 
         // Descriptors
-        VkDescriptorPool m_bindlessPool;
-        VkDescriptorSetLayout m_bindlessDescriptorSetLayout;
-        VkDescriptorSet m_bindlessDescriptorSet;
+        BindlessManager m_bindlessManager {m_GfxDevice, m_TextureCache};
 
         VkDescriptorPool m_globalDescriptorPool;
 
@@ -109,27 +107,27 @@ namespace MagicRed::Rendering
         VkSampler m_shadowSampler;
 
         // Imgui
-        bool m_bShowRenderingMenu = true;
-        bool m_bInteractableUI = false;
+        bool m_bShowRenderingMenu {true};
+        bool m_bInteractableUI {false};
 
         // RTs TODO:
-        GPUTextureId m_directionalShadowMapRTId{NULL_GPU_TEXTURE_ID};
+        GPUTextureId m_directionalShadowMapRTId {NULL_GPU_TEXTURE_ID};
 
-        GPUTextureId m_albedoRTId{NULL_GPU_TEXTURE_ID};
-        GPUTextureId m_worldNormalsRTId{NULL_GPU_TEXTURE_ID};
-        GPUTextureId m_metallicRoughnessRTId{NULL_GPU_TEXTURE_ID};
+        GPUTextureId m_albedoRTId {NULL_GPU_TEXTURE_ID};
+        GPUTextureId m_worldNormalsRTId {NULL_GPU_TEXTURE_ID};
+        GPUTextureId m_metallicRoughnessRTId {NULL_GPU_TEXTURE_ID};
 
-        GPUTextureId m_lightingRTId{NULL_GPU_TEXTURE_ID};
+        GPUTextureId m_lightingRTId {NULL_GPU_TEXTURE_ID};
         
         // std::vector<std::unique_ptr<StageBase>> m_pRenderStages;
         std::unique_ptr<ShadowMapStage> m_pShadowMapStage;
         std::unique_ptr<GBufferStage> m_pGbufferStage;
         std::unique_ptr<BlinnPhongLightingStage> m_pLightingStage;
 
-        float rx{-356.757f}; // near plane
-        float ry{167.567f}; // Far plane
-        float rz{77.027f}; // ortho size
-        float rm{ 3.14f * 3.0f / 2.0f };
+        float rx {-356.757f}; // near plane
+        float ry {167.567f}; // Far plane
+        float rz {77.027f}; // ortho size
+        float rm {3.14f * 3.0f / 2.0f};
 
         void initWindow();
         void init_graphics();

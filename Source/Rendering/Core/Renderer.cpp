@@ -64,7 +64,8 @@ namespace MagicRed::Rendering
     void Renderer::run() {
         update_material_data();           // Upload material data to the GPU
         init_scene_data();              // Initialize the scene data like matrices and buffer pointers, and upload the buffer
-        update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
+        m_bindlessManager.UpdateBindlessTextures();
+        m_bindlessManager.UpdateBindlessSamplers(m_linearSampler, m_shadowSampler);
         mainLoop();
     }
 
@@ -88,15 +89,14 @@ namespace MagicRed::Rendering
         m_GfxDevice.init(m_window);
         init_lights();                  // Create light objects on CPU side and upload them to the per fif light buffers
         create_samplers();              // Create sampler objects via handles
-        init_bindless_descriptors();    // Create descriptor pool and descriptor set for the bindless resources
+        m_bindlessManager.InitBindlessDescriptors();
+        // init_bindless_descriptors();    // Create descriptor pool and descriptor set for the bindless resources
         init_assets();                  // Load assets (mesh + textures -> materials) into CPU side, then onto the GPU
 
         init_global_descriptor_pool();  // Create global descriptor pool used only for render textures atm
 
         init_render_textures();         // Initialize gpu-only images as a part of the TextureCache's rendertextures portion
         init_render_stages();           // Initialize stage objects which only require knowledge of _formats_ for now. The actual image handles are specified when drawing via ImageViews
-
-        // update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
 
         init_imgui();
     }
@@ -159,84 +159,6 @@ namespace MagicRed::Rendering
                 .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE
             };
         vkCreateSampler(m_GfxDevice, &shadowSamplerCI, nullptr, &m_shadowSampler);
-    }
-
-    void Renderer::init_bindless_descriptors() {
-        constexpr uint32_t maxBindlessResourceCount = 16536; // Requires MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS
-        constexpr uint32_t maxSamplerCount = 2;
-
-        // Create a global descriptor pool, and let it know how many of each descriptor type we want up front
-        std::array<VkDescriptorPoolSize, 2> bindlessDescriptorPoolSizes {{
-            { VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplerCount},
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxBindlessResourceCount}
-        }};
-        VkDescriptorPoolCreateInfo poolCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT, // Allows us to update textures in a bindless array
-            // .maxSets = maxBindlessResourceCount * static_cast<uint32_t>(bindlessDescriptorPoolSizes.size()), // ?
-            .maxSets = maxBindlessResourceCount + maxSamplerCount, // ? potentially 1 set for each resource
-            .poolSizeCount = static_cast<uint32_t>(bindlessDescriptorPoolSizes.size()),
-            .pPoolSizes = bindlessDescriptorPoolSizes.data()
-        };
-        vkCreateDescriptorPool(m_GfxDevice, &poolCreateInfo, nullptr, &m_bindlessPool);
-
-        // Build a descriptor set layout
-        std::vector<VkDescriptorSetLayoutBinding> bindlessDescriptorSetLayoutBindings;
-        uint32_t bindingIndex = 0;
-        for(VkDescriptorPoolSize poolSize : bindlessDescriptorPoolSizes)
-        {
-            VkDescriptorSetLayoutBinding newBinding = {
-                .binding = bindingIndex,
-                .descriptorType = poolSize.type,
-                .descriptorCount = poolSize.descriptorCount,
-                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .pImmutableSamplers = nullptr
-            };
-            bindlessDescriptorSetLayoutBindings.push_back(newBinding);
-            bindingIndex++;
-        }
-        // Flags required for bindless stuff
-        // We only need a single layout since they are all the same for each frame in flight
-        // m_sceneDataDescriptorSetLayouts.push_back(layoutBuilder.buildLayout(m_GfxDevice, VK_SHADER_STAGE_FRAGMENT_BIT));
-        const VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT
-                                                        | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-        std::vector<VkDescriptorBindingFlags> descriptorBindingFlags;
-        for(size_t i = 0; i < bindlessDescriptorSetLayoutBindings.size(); i++)
-        {
-            descriptorBindingFlags.push_back(bindlessFlags);
-        }
-        descriptorBindingFlags.back() |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT; // Permits use of variable array size for a set (with the caveat that only the last binding in the set can be of variable length)
-        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedBindingInfo {
-            .sType =  VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-            .bindingCount = static_cast<uint32_t>(descriptorBindingFlags.size()),
-            .pBindingFlags = descriptorBindingFlags.data()
-        };
-        VkDescriptorSetLayoutCreateInfo bindlessSetLayoutCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .pNext = &extendedBindingInfo,
-            .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-            .bindingCount = static_cast<uint32_t>(bindlessDescriptorSetLayoutBindings.size()),
-            .pBindings = bindlessDescriptorSetLayoutBindings.data()
-        };
-        vkCreateDescriptorSetLayout(m_GfxDevice, &bindlessSetLayoutCreateInfo, nullptr, &m_bindlessDescriptorSetLayout);
-
-        // Allocate the descriptor set
-        uint32_t maxBinding = maxBindlessResourceCount;
-        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variableDescriptorCountInfo {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
-            .descriptorSetCount = 1,
-            .pDescriptorCounts = &maxBinding
-        };
-        VkDescriptorSetAllocateInfo allocateInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .pNext = &variableDescriptorCountInfo,
-            .descriptorPool = m_bindlessPool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &m_bindlessDescriptorSetLayout
-        };
-
-        vkAllocateDescriptorSets(m_GfxDevice, &allocateInfo, &m_bindlessDescriptorSet);
     }
 
     void Renderer::init_assets() {
@@ -479,8 +401,8 @@ namespace MagicRed::Rendering
             // m_renderStages.push_back(std::make_unique<GBufferStage>(m_GfxDevice, &pipelineRenderingCI, std::span<VkDescriptorSetLayout const>(std::array<VkDescriptorSetLayout, 1>{m_bindlessDescriptorSetLayout})));
             m_pGbufferStage = std::make_unique<GBufferStage>(
                 m_GfxDevice, &pipelineRenderingCI,
-                m_bindlessDescriptorSetLayout,
-                m_bindlessDescriptorSet
+                m_bindlessManager.GetBindlessDescriptorSetLayout(),
+                m_bindlessManager.GetBindlessDescriptorSet()
             );
         }
 
@@ -504,8 +426,8 @@ namespace MagicRed::Rendering
                 , &lightingPipelineRenderingCI
                 , m_RenderTextureCache
                 , m_globalDescriptorPool
-                , m_bindlessDescriptorSetLayout
-                , m_bindlessDescriptorSet
+                , m_bindlessManager.GetBindlessDescriptorSetLayout()
+                , m_bindlessManager.GetBindlessDescriptorSet()
                 , m_albedoRTId
                 , m_worldNormalsRTId
                 , m_metallicRoughnessRTId
@@ -543,73 +465,6 @@ namespace MagicRed::Rendering
             };
             sceneDataBuffer.gpuAddress  = vkGetBufferDeviceAddress(m_GfxDevice, &sceneDataBufferAddressInfo);
         }
-    }
-
-    void Renderer::update_bindless_texture_descriptors() {
-        constexpr uint32_t bindlessSamplerBinding = 0;
-        constexpr uint32_t bindlessTextureBinding = 1;
-
-        // TODO: should batch things per frame?
-
-        // Done like this instead of constructing temps in a for loop because of pImageInfo
-        std::vector<VkDescriptorImageInfo> textureInfos;
-        std::vector<VkWriteDescriptorSet> textureDescriptorWrites;
-        textureInfos.resize(m_TextureCache.get_gpu_texture_count());
-        textureDescriptorWrites.resize(m_TextureCache.get_gpu_texture_count());
-
-        for (uint32_t i = 0; i < m_TextureCache.get_gpu_texture_count(); i++)
-        {
-            textureInfos[i].imageView = m_TextureCache.get_texture(i).allocatedImage.imageView;
-            textureInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            textureDescriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            textureDescriptorWrites[i].pNext = nullptr;
-            textureDescriptorWrites[i].dstSet = m_bindlessDescriptorSet;
-            textureDescriptorWrites[i].dstBinding = bindlessTextureBinding;
-            textureDescriptorWrites[i].dstArrayElement = i;
-            textureDescriptorWrites[i].descriptorCount = 1;
-            textureDescriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            textureDescriptorWrites[i].pImageInfo = &textureInfos[i];
-            textureDescriptorWrites[i].pBufferInfo = nullptr;
-            textureDescriptorWrites[i].pTexelBufferView = nullptr;
-        }
-
-        vkUpdateDescriptorSets(m_GfxDevice, static_cast<uint32_t>(textureDescriptorWrites.size()), textureDescriptorWrites.data(), 0, nullptr);
-
-
-        VkDescriptorImageInfo linearSamplerInfo = {
-            .sampler = m_linearSampler
-        };
-        VkDescriptorImageInfo shadowSamplerInfo = {
-            .sampler = m_shadowSampler
-        };
-        VkWriteDescriptorSet linearSamplerDescriptorWrite = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
-            .dstSet = m_bindlessDescriptorSet,
-            .dstBinding = bindlessSamplerBinding,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .pImageInfo = &linearSamplerInfo,
-            .pBufferInfo = nullptr,
-            .pTexelBufferView = nullptr
-        };
-        VkWriteDescriptorSet shadowSamplerDescriptorWrite = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
-            .dstSet = m_bindlessDescriptorSet,
-            .dstBinding = bindlessSamplerBinding,
-            .dstArrayElement = 1,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .pImageInfo = &shadowSamplerInfo,
-            .pBufferInfo = nullptr,
-            .pTexelBufferView = nullptr
-        };
-        std::array<VkWriteDescriptorSet, 2> samplerDescriptorWrites = {linearSamplerDescriptorWrite, shadowSamplerDescriptorWrite};
-
-        vkUpdateDescriptorSets(m_GfxDevice, static_cast<uint32_t>(samplerDescriptorWrites.size()), samplerDescriptorWrites.data(), 0, nullptr);
     }
 
     void Renderer::init_imgui() {
@@ -1289,8 +1144,7 @@ namespace MagicRed::Rendering
         ImGui::DestroyContext();
         vkDestroyDescriptorPool(m_GfxDevice, m_imguiPool, nullptr);
 
-        vkDestroyDescriptorSetLayout(m_GfxDevice, m_bindlessDescriptorSetLayout, nullptr);
-        vkDestroyDescriptorPool(m_GfxDevice, m_bindlessPool, nullptr);
+        m_bindlessManager.Cleanup();
 
         m_materialDataBuffer.cleanup(m_GfxDevice.m_vmaAllocator);
 
