@@ -6,12 +6,13 @@
 
 struct PointLight {
     vec3 worldSpacePosition;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
     float constantAttenuation;
+    vec3 ambient;
     float linearAttenuation;
+    vec3 diffuse;
     float quadraticAttenuation;
+    vec3 specular;
+    // float padding;
 };
 
 struct DirectionalLight {
@@ -29,15 +30,14 @@ layout (buffer_reference, scalar) readonly buffer SceneDataBuffer {
     // camera
     mat4 view;               
     mat4 projection;
-    mat4 directionalLightViewProjection;    
-    vec3 cameraWorldPosition;
-    int numPointLights;
+    vec4 cameraWorldPosition;
+    
     PointLightsDataBuffer pointLights;
-    
+    int numPointLights;
     DirectionalLight directionalLight;
-
+    int padding;
     MaterialDataBuffer materials;
-    
+    mat4 directionalLightViewProjection;
 };
 
 #endif // SCENE_DATA_GLSL

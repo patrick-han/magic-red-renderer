@@ -110,8 +110,8 @@ namespace MagicRed::Rendering
 
 
         // Point lights
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 223.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(45.0f/255.0f, 25.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        // m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
 
         if (m_CPUPointLights.size() > 0)
         {
@@ -676,11 +676,11 @@ namespace MagicRed::Rendering
                 0.0,
                 lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
             );
-            m_CPUPointLights[1].worldSpacePosition = glm::vec3(
-                lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
-                1.0,
-                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber)
-            );
+            // m_CPUPointLights[1].worldSpacePosition = glm::vec3(
+            //     lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
+            //     1.0,
+            //     lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber)
+            // );
 
 
             update_buffer(
@@ -707,10 +707,10 @@ namespace MagicRed::Rendering
             glm::vec3(0.0f, 0.0f, 0.0f), 
             glm::vec3(0.0f, 1.0f, 0.0f));
         m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
-        //  m_CPUSceneData.view = directionalLightView;
-        //  m_CPUSceneData.projection = directionalLightProjection;
+        // m_CPUSceneData.view = directionalLightView;
+        // m_CPUSceneData.projection = directionalLightProjection;
 
-        m_CPUSceneData.cameraWorldPosition = camera.get_world_position();
+        m_CPUSceneData.cameraWorldPosition = glm::vec4(camera.get_world_position(), 1.0f);
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;
         m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
         m_CPUSceneData.directionalLight = m_directionalLight;
