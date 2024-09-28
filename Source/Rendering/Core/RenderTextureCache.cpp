@@ -7,6 +7,8 @@ namespace MagicRed::Rendering
         // const GPUTextureId textureId = static_cast<uint32_t>(m_gpuTextures.size());
         const GPUTextureId textureId = static_cast<uint32_t>(m_gpuRTTextures.size());
 
+        bool isDepthFormat = (format >= 124) && (format <= 130) ? true : false;
+
         GPUTexture renderTexture;
 
         VkExtent3D imageExtent; 
@@ -17,7 +19,8 @@ namespace MagicRed::Rendering
         renderTexture.allocatedImage.imageFormat = format;
 
         create_gpu_only_image(renderTexture.allocatedImage, imageCreateInfo, gfxDevice.m_vmaAllocator);
-        VkImageViewCreateInfo imageViewCreateInfo = imageview_create_info(renderTexture.allocatedImage.image, format, {}, VK_IMAGE_ASPECT_COLOR_BIT);
+        VkImageViewCreateInfo imageViewCreateInfo = imageview_create_info(
+            renderTexture.allocatedImage.image, format, {}, isDepthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
         vkCreateImageView(gfxDevice, &imageViewCreateInfo, nullptr, &renderTexture.allocatedImage.imageView);
         
 

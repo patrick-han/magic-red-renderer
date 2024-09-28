@@ -44,4 +44,26 @@ namespace MagicRed::Rendering
         };
         return renderingInfo;
     }
+
+    [[nodiscard]] VkRenderingInfoKHR rendering_info_custom_size(
+        uint32_t colorAttachmentCount
+        , VkRenderingAttachmentInfoKHR* pColorAttachments
+        , VkRenderingAttachmentInfoKHR* pDepthAttachment
+        , uint32_t x
+        , uint32_t y
+        ) {
+        VkRenderingInfoKHR renderingInfo = {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+            .pNext = nullptr,
+            .flags = {},
+            .renderArea = VkRect2D{ {0, 0}, {x, y}},
+            .layerCount = 1,
+            .viewMask = 0,
+            .colorAttachmentCount = colorAttachmentCount,
+            .pColorAttachments = pColorAttachments,
+            .pDepthAttachment = pDepthAttachment,
+            .pStencilAttachment = nullptr,
+        };
+        return renderingInfo;
+    }
 }

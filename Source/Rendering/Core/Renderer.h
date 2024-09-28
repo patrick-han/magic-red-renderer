@@ -19,6 +19,7 @@
 #include <Rendering/Core/SceneData.h>
 #include <Rendering/Core/RenderingConfig.h>
 
+#include <Rendering/RenderStages/ShadowMapStage.h>
 #include <Rendering/RenderStages/GBufferStage.h>
 #include <Rendering/RenderStages/BlinnPhongLightingStage.h>
 
@@ -112,6 +113,8 @@ namespace MagicRed::Rendering
         bool m_bInteractableUI = false;
 
         // RTs TODO:
+        GPUTextureId m_directionalShadowMapRTId{NULL_GPU_TEXTURE_ID};
+
         GPUTextureId m_albedoRTId{NULL_GPU_TEXTURE_ID};
         GPUTextureId m_worldNormalsRTId{NULL_GPU_TEXTURE_ID};
         GPUTextureId m_metallicRoughnessRTId{NULL_GPU_TEXTURE_ID};
@@ -119,6 +122,7 @@ namespace MagicRed::Rendering
         GPUTextureId m_lightingRTId{NULL_GPU_TEXTURE_ID};
         
         // std::vector<std::unique_ptr<StageBase>> m_pRenderStages;
+        std::unique_ptr<ShadowMapStage> m_pShadowMapStage;
         std::unique_ptr<GBufferStage> m_pGbufferStage;
         std::unique_ptr<BlinnPhongLightingStage> m_pLightingStage;
 

@@ -1,4 +1,4 @@
-#include <Rendering/Pipeline/GraphicsPipeline.h>
+    #include <Rendering/Pipeline/GraphicsPipeline.h>
 #include <Rendering/Shader/Shader.h>
 #include <Rendering/Vertex/VertexDescriptors.h> // Temp
 #include <Common/RootDir.h>
@@ -56,7 +56,7 @@ namespace MagicRed::Rendering
             VK_TRUE, // Enable depth writes by default
             // bDepthTest ? VK_TRUE : VK_FALSE,
             // bDepthWrite ? VK_TRUE : VK_FALSE,
-            VK_COMPARE_OP_LESS_OR_EQUAL,
+            VK_COMPARE_OP_LESS,
             VK_FALSE, // depth bounds test
             VK_FALSE, // stencil
             {}, {}, {}, {}

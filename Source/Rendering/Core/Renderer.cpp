@@ -103,9 +103,9 @@ namespace MagicRed::Rendering
 
     void Renderer::init_lights() {
         // Directional Light
-        m_directionalLight.direction.x = -0.2f;
+        m_directionalLight.direction.x = -0.1f;
         m_directionalLight.direction.y = -1.0f;
-        m_directionalLight.direction.z = -0.3f;
+        m_directionalLight.direction.z = -0.1f;
         m_directionalLight.power = 1.0f;
 
 
@@ -382,6 +382,18 @@ namespace MagicRed::Rendering
     void Renderer::init_render_textures() {
         VkExtent3D fullFrameBufferExtent = {.width = WINDOW_WIDTH, .height = WINDOW_HEIGHT, .depth = 1};
 
+        // Shadowmap(s)
+        {
+            VkFormat shadowMapRTFormat = VK_FORMAT_D16_UNORM;
+            VkImageCreateInfo shadowMapRTImage_ci = image_create_info(shadowMapRTFormat
+                , {SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, 1}
+                , VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT 
+                | VK_IMAGE_USAGE_SAMPLED_BIT // Lighting alternative read in
+                , VK_IMAGE_TYPE_2D
+                );
+            m_directionalShadowMapRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, shadowMapRTFormat, shadowMapRTImage_ci);
+        }
+
         // G Buffer
         {
 
@@ -430,6 +442,18 @@ namespace MagicRed::Rendering
 
     void Renderer::init_render_stages() {
         {
+            // Shadowmap
+            VkPipelineRenderingCreateInfoKHR pipelineRenderingCI = {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+                .pNext = nullptr,
+                .viewMask = 0,
+                .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
+            };
+            m_pShadowMapStage = std::make_unique<ShadowMapStage>(m_GfxDevice, &pipelineRenderingCI);
+        }
+
+
+        {
             // GBuffer
             VkFormat colorAttachmentFormats[3] = {
                 m_RenderTextureCache.get_render_texture(m_albedoRTId).allocatedImage.imageFormat,
@@ -442,7 +466,7 @@ namespace MagicRed::Rendering
                 .viewMask = 0,
                 .colorAttachmentCount = 3,
                 .pColorAttachmentFormats = colorAttachmentFormats,
-                .depthAttachmentFormat = m_GfxDevice.m_depthImage.imageFormat, // TODO: we're not writing to depth, so this doesnt need to be passed?
+                .depthAttachmentFormat = m_GfxDevice.m_depthImage.imageFormat,
                 .stencilAttachmentFormat = {}
             };
 
@@ -450,7 +474,8 @@ namespace MagicRed::Rendering
             m_pGbufferStage = std::make_unique<GBufferStage>(
                 m_GfxDevice, &pipelineRenderingCI,
                 m_bindlessDescriptorSetLayout,
-                m_bindlessDescriptorSet);
+                m_bindlessDescriptorSet
+            );
         }
 
 
@@ -483,14 +508,7 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::init_scene_data() {
-        m_CPUSceneData.view = camera.get_view_matrix();
-        glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f);
-        projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
-        m_CPUSceneData.projection = projection;
-        m_CPUSceneData.cameraWorldPosition = camera.get_world_position();
-        m_CPUSceneData.lightBufferAddress = 0; // TODO during update_scene_data()? or now
-        m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
-        m_CPUSceneData.directionalLight = m_directionalLight;
+        // Honestly I should init things here like in update_scene_data() but I really don't care about the first frame tbh and it basically does not matter at all
 
         // GPUMaterial data only set once at the beginning, since for now we are loading all assets in ahead of time
         VkBufferDeviceAddressInfoKHR materialBufferAddressInfo{
@@ -677,6 +695,17 @@ namespace MagicRed::Rendering
         glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f);
         projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
         m_CPUSceneData.projection = projection;
+
+        float near_plane = 1.0f, far_plane = 30.0f;  // Increased far plane
+        float ortho_size = 10.0f;  // Adjust based on your scene size
+        glm::mat4 directionalLightProjection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
+        directionalLightProjection[1][1] *= -1;
+        glm::mat4 directionalLightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), 
+                                                    glm::vec3( 0.0f, 0.0f,  0.0f),
+                                                    glm::vec3( 0.0f, 1.0f,  0.0f));
+        // glm::mat4 directionalLightView = glm::lookAt(-m_directionalLight.direction, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
+
         m_CPUSceneData.cameraWorldPosition = camera.get_world_position();
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;
         m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
@@ -715,6 +744,49 @@ namespace MagicRed::Rendering
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+            PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdBeginRenderingKHR"));
+            PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdEndRenderingKHR"));
+
+            // Transition shadowmap depth image to be written to in renderpass
+            {
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
+                    m_RenderTextureCache.get_render_texture(m_directionalShadowMapRTId).allocatedImage.image,
+                    VK_ACCESS_NONE,
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_ASPECT_DEPTH_BIT
+                );
+                vkCmdPipelineBarrier(
+                    cmdBuffer,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    {},
+                    0, nullptr,
+                    0, nullptr,
+                    1, &imb
+                );
+            }
+
+            {
+                VkRenderingAttachmentInfoKHR depthAttachmentInfo  = rendering_attachment_info(
+                    m_RenderTextureCache.get_render_texture(m_directionalShadowMapRTId).allocatedImage.imageView,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    &DEFAULT_CLEAR_VALUE_DEPTH
+                );
+
+                VkRenderingInfoKHR renderingInfo = rendering_info_custom_size(
+                    0, nullptr, &depthAttachmentInfo, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION
+                );
+                vkCmdBeginRenderingKHR(cmdBuffer, &renderingInfo);
+
+                m_pShadowMapStage->Draw(cmdBuffer, m_GPUSceneDataBuffers[m_currentFrame].gpuAddress, m_sceneRenderMeshComponents);
+
+                vkCmdEndRenderingKHR(cmdBuffer);
+            }
+
+
 
             // Transition depth image to be written to in renderpass
             {
@@ -770,9 +842,6 @@ namespace MagicRed::Rendering
                     static_cast<std::uint32_t>(barriers.size()), barriers.data()
                 );
             }
-
-            PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdBeginRenderingKHR"));
-            PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdEndRenderingKHR"));
 
             {
                 VkRenderingAttachmentInfoKHR albedoAttachmentInfo = rendering_attachment_info(
@@ -1192,6 +1261,7 @@ namespace MagicRed::Rendering
 
         m_pLightingStage->Cleanup();
         m_pGbufferStage->Cleanup();
+        m_pShadowMapStage->Cleanup();
         vkDestroyDescriptorPool(m_GfxDevice, m_globalDescriptorPool, nullptr);
 
 

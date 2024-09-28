@@ -15,4 +15,12 @@ namespace MagicRed::Rendering
         VkRenderingAttachmentInfoKHR* pColorAttachments,
         VkRenderingAttachmentInfoKHR* pDepthAttachment
     );
+
+    [[nodiscard]] VkRenderingInfoKHR rendering_info_custom_size(
+        uint32_t colorAttachmentCount
+        , VkRenderingAttachmentInfoKHR* pColorAttachments
+        , VkRenderingAttachmentInfoKHR* pDepthAttachment
+        , uint32_t x
+        , uint32_t y
+    );
 }
