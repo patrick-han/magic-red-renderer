@@ -24,6 +24,6 @@ namespace MagicRed::Resource
         [[nodiscard]] GPUTextureId LoadTextureFromFile(const std::filesystem::path& texturePath, const aiTexture* embeddedTexture = nullptr);
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
-        std::unordered_map<std::filesystem::path, GUID>& m_textureFileToGuidMapRef;
+        std::unordered_map<std::filesystem::path, GUID>& m_fileToGuidMap;
     };
 }

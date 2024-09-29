@@ -12,7 +12,7 @@ namespace MagicRed::Resource
         , std::unordered_map<std::filesystem::path, GUID>& _textureFileToGuidMapRef
     )
     : m_pRenderer(_pRenderer)
-    , m_textureFileToGuidMapRef(_textureFileToGuidMapRef)
+    , m_fileToGuidMap(_textureFileToGuidMapRef)
     {
 
     }
@@ -22,7 +22,7 @@ namespace MagicRed::Resource
         GPUTextureId gpuTextureId;
 
         // Now, we actually load the texture file if it hasn't already been loaded and uploaded to the GPU
-        if (m_textureFileToGuidMapRef.count(texturePath) == 0)
+        if (m_fileToGuidMap.count(texturePath) == 0)
         {
             
             int width, height, numberComponents;
@@ -39,13 +39,13 @@ namespace MagicRed::Resource
             };
 
             GUID newTextureGuid = GUID();
-            m_textureFileToGuidMapRef.insert({texturePath, newTextureGuid});
+            m_fileToGuidMap.insert({texturePath, newTextureGuid});
             gpuTextureId = m_pRenderer->UploadTexture(textureLoadingData, newTextureGuid);
             stbi_image_free(data);
         }
         else // Otherwise retrieve the existing guid...
         {
-            gpuTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_textureFileToGuidMapRef[texturePath]);
+            gpuTextureId = m_pRenderer->GetGPUTextureIdByGuid(m_fileToGuidMap[texturePath]);
         }
         return gpuTextureId;
     }

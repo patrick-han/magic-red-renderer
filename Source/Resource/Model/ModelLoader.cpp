@@ -49,12 +49,21 @@ namespace MagicRed::Resource
         const aiTexture* texturePtr;
     };
 
-    EmbeddedTextureData GetEmbeddedTextureData(aiMaterial* material, const aiScene* scene,aiTextureType textureType) {
+    const std::unordered_map<aiTextureType, std::string> textureTypeToSuffixMap {
+        {aiTextureType_BASE_COLOR, "_diffuse_tex"},
+        {aiTextureType_METALNESS, "_metallicRoughness_tex"},
+        {aiTextureType_NORMALS, "_normal_tex"},
+        {aiTextureType_EMISSIVE, "_emissive_tex"}
+    };
+
+    EmbeddedTextureData GetEmbeddedTextureData(aiMaterial* material, const aiScene* scene, aiTextureType textureType, std::string modelName) {
         aiString embeddedTextureFile;
         material->GetTexture(textureType, 0, &embeddedTextureFile);
         const aiTexture* texturePtr = scene->GetEmbeddedTexture(embeddedTextureFile.C_Str());
-        std::string textureName {embeddedTextureFile.C_Str() + std::string("_diffuse_tex")};
-        return {textureName, texturePtr};
+        return {
+            modelName + embeddedTextureFile.C_Str() + textureTypeToSuffixMap.at(textureType)
+            , texturePtr
+        };
     }
 
     void CPUModelLoader::process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix)
@@ -180,9 +189,10 @@ namespace MagicRed::Resource
                 //float normalScale;
 
                 // Check material counts first
+                std::string modelName = m_filePath.stem().string();
                 if (materialDiffuseCount > 0) {
                     if (m_texturesEmbedded) {
-                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_BASE_COLOR);
+                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_BASE_COLOR, modelName);
                         meshMaterial.diffuseTextureId = m_textureLoader.LoadTextureFromFile(embeddedTextureData.textureName, embeddedTextureData.texturePtr);
                     } else {
                         const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_BASE_COLOR)};
@@ -194,7 +204,7 @@ namespace MagicRed::Resource
 
                 if (materialMetallicRoughnessCount > 0) {
                     if (m_texturesEmbedded) {
-                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_METALNESS);
+                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_METALNESS, modelName);
                         meshMaterial.metallicRoughnessTextureId = m_textureLoader.LoadTextureFromFile(embeddedTextureData.textureName, embeddedTextureData.texturePtr);
                     } else {
                         const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_METALNESS)};
@@ -206,7 +216,7 @@ namespace MagicRed::Resource
 
                 if (materialNormalCount > 0) {
                     if (m_texturesEmbedded) {
-                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_NORMALS);
+                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_NORMALS, modelName);
                         meshMaterial.normalTextureId = m_textureLoader.LoadTextureFromFile(embeddedTextureData.textureName, embeddedTextureData.texturePtr);
                     } else {
                         const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_NORMALS)};
@@ -218,7 +228,7 @@ namespace MagicRed::Resource
 
                 if (materialEmissiveCount > 0) {
                     if (m_texturesEmbedded) {
-                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_EMISSIVE);
+                        EmbeddedTextureData embeddedTextureData = GetEmbeddedTextureData(material, scene, aiTextureType_EMISSIVE, modelName);
                         meshMaterial.emissiveTextureId = m_textureLoader.LoadTextureFromFile(embeddedTextureData.textureName, embeddedTextureData.texturePtr);
                     } else {
                         const std::string textureName {GetTextureNameFromAssimpType(material, aiTextureType_EMISSIVE)};
@@ -284,7 +294,7 @@ namespace MagicRed::Resource
     : m_pRenderer(_pRenderer)
     , m_texturesEmbedded(_texturesEmbedded)
     , m_filePath(_filePath)
-    , m_textureFileToGuidMapRef(_textureFileToGuidMapRef)
+    , m_fileToGuidMap(_textureFileToGuidMapRef)
     {}
 
     void CPUModelLoader::LoadImmediately() {

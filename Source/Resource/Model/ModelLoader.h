@@ -44,7 +44,7 @@ namespace MagicRed::Resource
         //  V             V
         // TextureGuid    TextureGuid
         inline int NumberOfTexturesLoaded() {
-            return static_cast<int>(m_textureFileToGuidMapRef.size());
+            return static_cast<int>(m_fileToGuidMap.size());
         }
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
@@ -53,8 +53,8 @@ namespace MagicRed::Resource
 
 
         
-        std::unordered_map<std::filesystem::path, GUID>& m_textureFileToGuidMapRef;
-        TextureLoader m_textureLoader {m_pRenderer, m_textureFileToGuidMapRef};
+        std::unordered_map<std::filesystem::path, GUID>& m_fileToGuidMap;
+        TextureLoader m_textureLoader {m_pRenderer, m_fileToGuidMap};
 
         // Mapping from assimp mesh material index to MaterialId to keep track
         // of materials that have already been loaded while parsing assimp structure
