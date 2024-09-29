@@ -30,12 +30,12 @@ namespace MagicRed::Resource
         m_projectDirectory = projectDirectory;
     }
 
-    void ResourceManager::ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded) {
+    void ResourceManager::ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded, glm::vec3 translate, glm::vec3 scale) {
         std::filesystem::path sourceAbsoluteFilePath = m_projectDirectory / sourceLocalFilePath;
         CPUModelLoader cpuModelLoader(m_pRenderer, texturesEmbedded, sourceAbsoluteFilePath, m_fileToGuidMap);
         cpuModelLoader.LoadImmediately();
-        glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
-        glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
+        glm::mat4 translateMat = glm::translate(glm::mat4{ 1.0f }, translate);
+        glm::mat4 scaleMat = glm::scale(glm::mat4{ 1.0 }, scale);
 
         assert(cpuModelLoader.m_cpuMeshes.size() == cpuModelLoader.m_meshMaterialIds.size());
         for (size_t i = 0; i < cpuModelLoader.m_cpuMeshes.size(); i++)
@@ -43,7 +43,7 @@ namespace MagicRed::Resource
             MagicRed::Rendering::CPUMesh& mesh = cpuModelLoader.m_cpuMeshes[i];
             MaterialId& meshMaterialId = cpuModelLoader.m_meshMaterialIds[i];
             GPUMeshId meshId = m_pRenderer->UploadMesh(mesh, meshMaterialId);
-            m_pRenderer->m_sceneRenderMeshComponents.emplace_back(meshId, m_pRenderer->m_MeshCache, translate * scale);
+            m_pRenderer->m_sceneRenderMeshComponents.emplace_back(meshId, m_pRenderer->m_MeshCache, translateMat * scaleMat);
         }
     }
 }

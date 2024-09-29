@@ -2,6 +2,7 @@
 #include <string>
 #include <Resource/GUID.h>
 #include <filesystem>
+#include <glm/vec3.hpp>
 
 namespace MagicRed::Rendering
 {
@@ -26,7 +27,7 @@ namespace MagicRed::Resource
         void Startup/*RegisterRenderer*/(MagicRed::Rendering::Renderer* _pRenderer);
         void SetProjectDirectory(const std::filesystem::path& projectDirectory);
 
-        void ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded);
+        void ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded, glm::vec3 translate, glm::vec3 scale);
 
     private:
         MagicRed::Rendering::Renderer* m_pRenderer {nullptr};

@@ -3,6 +3,7 @@
 #include <External/stb_image.h>
 #include <Rendering/Texture/TextureData.h>
 #include <Rendering/Core/Renderer.h>
+#include <assimp/texture.h>
 
 namespace MagicRed::Resource
 {
@@ -16,21 +17,28 @@ namespace MagicRed::Resource
 
     }
 
-    [[nodiscard]] GPUTextureId TextureLoader::LoadTextureFromFile(const std::filesystem::path& texturePath)
+    [[nodiscard]] GPUTextureId TextureLoader::LoadTextureFromFile(const std::filesystem::path& texturePath, const aiTexture* embeddedTexture)
     {
         GPUTextureId gpuTextureId;
 
         // Now, we actually load the texture file if it hasn't already been loaded and uploaded to the GPU
         if (m_textureFileToGuidMapRef.count(texturePath) == 0)
         {
-            GUID newTextureGuid = GUID();
+            
             int width, height, numberComponents;
-            unsigned char *data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
-
+            stbi_uc* data;
+            if (embeddedTexture == nullptr) {
+                data = stbi_load(texturePath.string().c_str(), &width, &height, &numberComponents, STBI_rgb_alpha); // TODO: request 4 channels from all images
+            } else {
+                data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(embeddedTexture->pcData), embeddedTexture->mWidth, &width, &height, &numberComponents, STBI_rgb_alpha);
+            }
+            
             MagicRed::Rendering::TextureLoadingData textureLoadingData = {
                 .data = data,
                 .texSize = {width, height, 4} // TODO: force all images to have 4 channels...ignoring numberComponents for now
             };
+
+            GUID newTextureGuid = GUID();
             m_textureFileToGuidMapRef.insert({texturePath, newTextureGuid});
             gpuTextureId = m_pRenderer->UploadTexture(textureLoadingData, newTextureGuid);
             stbi_image_free(data);
