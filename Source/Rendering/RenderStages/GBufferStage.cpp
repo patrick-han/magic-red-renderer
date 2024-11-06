@@ -25,6 +25,8 @@ namespace MagicRed::Rendering
                 .SetExtent(m_extent)
                 .SetBlendEnable(false)
                 .SetCullMode(VK_CULL_MODE_BACK_BIT)
+                .SetDepthTestEnable(true)
+                .SetDepthCompareOp(VK_COMPARE_OP_LESS)
                 .Build();
         }
 

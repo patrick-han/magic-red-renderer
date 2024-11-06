@@ -19,7 +19,9 @@ namespace MagicRed::Rendering
                 .SetDescriptorSetLayouts({})
                 .SetExtent(m_extent)
                 .SetBlendEnable(false)
-                .SetCullMode(VK_CULL_MODE_BACK_BIT) // Fix peter panning
+                .SetCullMode(VK_CULL_MODE_FRONT_BIT) // Fix peter panning
+                .SetDepthTestEnable(true)
+                .SetDepthCompareOp(VK_COMPARE_OP_LESS)
                 .Build();
         }
 

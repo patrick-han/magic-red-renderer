@@ -19,6 +19,8 @@ namespace MagicRed::Rendering
         GraphicsPipelineBuilder& SetExtent(VkExtent2D extent);
         GraphicsPipelineBuilder& SetBlendEnable(bool enable);
         GraphicsPipelineBuilder& SetCullMode(VkCullModeFlags cullMode);
+        GraphicsPipelineBuilder& SetDepthTestEnable(bool enable);
+        GraphicsPipelineBuilder& SetDepthCompareOp(VkCompareOp compareOp);
 
         GraphicsPipeline Build();
     private:
@@ -37,6 +39,8 @@ namespace MagicRed::Rendering
         VkExtent2D m_extent;
         bool m_blendEnable;
         VkCullModeFlags m_cullMode;
+        bool m_depthTestEnable;
+        VkCompareOp m_depthCompareOp;
     };
 
     class GraphicsPipeline {

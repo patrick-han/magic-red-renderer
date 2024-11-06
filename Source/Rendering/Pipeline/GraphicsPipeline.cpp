@@ -54,6 +54,16 @@ namespace MagicRed::Rendering
         return *this;
     }
 
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthTestEnable(bool enable) {
+        m_depthTestEnable = enable;
+        return *this;
+    }
+
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthCompareOp(VkCompareOp compareOp) {
+        m_depthCompareOp = compareOp;
+        return *this;
+    }
+
     GraphicsPipeline GraphicsPipelineBuilder::Build() {
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;
@@ -118,9 +128,9 @@ namespace MagicRed::Rendering
 
         VkPipelineDepthStencilStateCreateInfo depthStencil = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            .depthTestEnable = VK_TRUE,
+            .depthTestEnable = m_depthTestEnable ? VK_TRUE : VK_FALSE,
             .depthWriteEnable = VK_TRUE,
-            .depthCompareOp = VK_COMPARE_OP_LESS,
+            .depthCompareOp = m_depthCompareOp,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable = VK_FALSE
         };
