@@ -22,15 +22,16 @@
 
 #include <Camera/Camera.h>
 #include <Common/Log.h>
-#include <Rendering/Mesh/Mesh.h>
-#include <Resource/Model/ModelLoader.h>
 
+#include <Rendering/Mesh/Mesh.h>
 #include <Rendering/Image/Image.h>
 #include <Rendering/Wrappers/ImageMemoryBarrier.h>
 #include <Rendering/Wrappers/DynamicRendering.h>
-
 #include <Rendering/Core/RenderingDefaults.h>
 #include <Rendering/Descriptor/Descriptor.h>
+
+#include <Resource/Model/ModelLoader.h>
+#include <Resource/ResourceManager.h>
 
 #include <IncludeHelpers/ImguiIncludes.h>
 
@@ -1096,6 +1097,18 @@ namespace MagicRed::Rendering
             //         renderMeshComponent.m_transformMatrix = scale;
             // }
             // }
+            const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();
+            ImGui::Text("Number of GPU resident textures: %zu", fileToGuidMap->size());
+            if (ImGui::BeginChild("GPU Resident Textures", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar))
+            {
+                for (const auto& [filePath, guid] : *fileToGuidMap)
+                {
+                    ImGui::Text("File: %s", filePath.string().c_str());
+                    ImGui::SameLine();
+                    ImGui::Text("GUID: %s", guid.to_string().c_str());
+                }
+                ImGui::EndChild();
+            }
             ImGui::End();
             ImGui::Render();
             drawFrame();

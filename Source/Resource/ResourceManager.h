@@ -26,8 +26,10 @@ namespace MagicRed::Resource
         // systems
         void Startup/*RegisterRenderer*/(MagicRed::Rendering::Renderer* _pRenderer);
         void SetProjectDirectory(const std::filesystem::path& projectDirectory);
-
+        inline const std::unordered_map<std::filesystem::path, GUID>* GetFileToGuidMap() const { return &m_fileToGuidMap; }
         void ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded, glm::vec3 translate, glm::vec3 scale);
+
+        void ImportTexture(const std::filesystem::path& sourceLocalFilePath);
 
     private:
         MagicRed::Rendering::Renderer* m_pRenderer {nullptr};

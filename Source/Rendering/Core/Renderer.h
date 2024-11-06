@@ -45,6 +45,8 @@ namespace MagicRed::Rendering
         void run();
         void Shutdown();
 
+        void SetResourceManager(Resource::ResourceManager* pResourceManager) { m_pResourceManager = pResourceManager; }
+
         // Mesh Cache
         inline GPUMeshId UploadMesh(const CPUMesh& cpuMesh, const MaterialId meshMaterialId) {
             return m_MeshCache.add_mesh(m_GfxDevice, cpuMesh, meshMaterialId);
@@ -77,6 +79,8 @@ namespace MagicRed::Rendering
         TextureCache m_TextureCache;
         MaterialCache m_MaterialCache;
         RenderTextureCache m_RenderTextureCache;
+
+        Resource::ResourceManager* m_pResourceManager;
 
 
         VkDescriptorPool m_imguiPool;
