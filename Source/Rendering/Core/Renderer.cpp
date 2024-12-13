@@ -157,7 +157,7 @@ namespace MagicRed::Rendering
                 .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
                 .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
                 .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-                .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE
+                .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE // All coordinates projected outside of shadowmap just map to 1.0, i.e. not in shadow
             };
         vkCreateSampler(m_GfxDevice, &shadowSamplerCI, nullptr, &m_shadowSampler);
     }
@@ -586,8 +586,10 @@ namespace MagicRed::Rendering
             glm::vec3(0.0f, 0.0f, 0.0f), 
             glm::vec3(0.0f, 1.0f, 0.0f));
         m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
-        // m_CPUSceneData.view = directionalLightView;
-        // m_CPUSceneData.projection = directionalLightProjection;
+#if DEBUG_DIRECTIONAL_LIGHT
+        m_CPUSceneData.view = directionalLightView;
+        m_CPUSceneData.projection = directionalLightProjection;
+#endif
 
         m_CPUSceneData.cameraWorldPosition = glm::vec4(camera.get_world_position(), 1.0f);
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;

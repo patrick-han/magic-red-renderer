@@ -36,6 +36,12 @@ layout (set = 1, binding = 4) uniform texture2D directionalLightShadowMap;
 float calculateShadow(vec3 norm, vec3 fragWorldPos) {
     vec4 fragDirLightSpacePos = pushConstants.sceneData.directionalLightViewProjection * vec4(fragWorldPos, 1.0);
     vec3 shadowSamplePos = fragDirLightSpacePos.xyz / fragDirLightSpacePos.w;
+
+    // Fix oversampling outside the far plane of the light orthographic frustum
+    if (shadowSamplePos.z > 1.0) {
+        return 0.0;
+    }
+
     shadowSamplePos.xy *= 0.5;
     shadowSamplePos.xy += 0.5; // UV
 
@@ -43,11 +49,20 @@ float calculateShadow(vec3 norm, vec3 fragWorldPos) {
     vec3 lightDir = normalize(pushConstants.sceneData.directionalLight.direction);
     float bias = max(0.005, 0.05 * (1.0 - dot(norm, lightDir))); // Goes from 0.005 to 0.05 as the angle between the light and the normal increases
     float currentDepth = fragDirLightSpacePos.z;
-    // float shadowMapDepth = texture(sampler2D(directionalLightShadowMap, linearSampler), shadowSamplePos.xy).r;
-    float shadowMapDepth = sampleTextureLinear(directionalLightShadowMap, shadowSamplePos.xy).r;
-    if (shadowMapDepth < (currentDepth - bias)) {
-        inShadow = 1.0;
+
+    // PCF: Simple average over a 3x3 neighborhood
+    vec2 texelSize = vec2(1.0) / textureSize(directionalLightShadowMap, 0);
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            vec2 offset = vec2(x,y) * texelSize;
+            float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + offset).r;
+            if (shadowMapDepth < (currentDepth - bias)) {
+                inShadow += 1.0;
+            }
+        }
     }
+
+    inShadow /= 9.0;
     return inShadow;
 }
 
