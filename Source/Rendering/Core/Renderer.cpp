@@ -104,9 +104,9 @@ namespace MagicRed::Rendering
 
     void Renderer::init_lights() {
         // Directional Light
-        m_directionalLight.direction.x = 0.151f;
-        m_directionalLight.direction.y = 0.919f;
-        m_directionalLight.direction.z = -0.103f;
+        m_directionalLight.direction.x = 0.01f;
+        m_directionalLight.direction.y = 1.0f;
+        m_directionalLight.direction.z = -0.01;
         m_directionalLight.power = 1.0f;
 
 
@@ -577,8 +577,8 @@ namespace MagicRed::Rendering
         projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
         m_CPUSceneData.projection = projection;
 
-        float near_plane = rx, far_plane = ry;
-        float ortho_size = rz;  // Adjust based on your scene size
+        float near_plane = -356.757f, far_plane = 167.567f;
+        float ortho_size = 77.027f;  // Adjust based on your scene size
         glm::mat4 directionalLightProjection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
         directionalLightProjection[1][1] *= -1;
         glm::mat4 directionalLightView = glm::lookAt(
@@ -1084,19 +1084,19 @@ namespace MagicRed::Rendering
             ImGui::SliderFloat("Directional Light z", &m_directionalLight.direction.z, -1.0f, 1.0f);
             ImGui::SliderFloat("Directional Light power", &m_directionalLight.power,  0.0f, 1.0f);
 
-            ImGui::SliderFloat("nera plane", &rx,  -1000.0f, 1000.000f);
-            ImGui::SliderFloat("far plane", &ry,  -1000.0f, 1000.000f);
-            ImGui::SliderFloat("ortho_size", &rz,  -1000.0f, 1000.0f);
+            ImGui::SliderFloat("rx", &rx,  -1.0f, 1.0f);
+            ImGui::SliderFloat("ry", &ry,  -1.0f, 1.0f);
+            ImGui::SliderFloat("rz", &rz,  -1.0f, 1.0f);
             ImGui::SliderFloat("rm", &rm,  2.0f * -3.14f, 2.0f *3.14f);
             // for (auto& renderMeshComponent : m_sceneRenderMeshComponents)
             // {
             // if (m_sceneRenderMeshComponents.size() > 0)
             // {
-            // RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
-            //         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
-            //         glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-            //         glm::mat4 scale = glm::scale(rotate, glm::vec3(1.0f, 1.0f, 1.0f));
-            //         renderMeshComponent.m_transformMatrix = scale;
+            RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
+                    glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 6.0f, 0.0f));
+                    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
+                    glm::mat4 scale = glm::scale(rotate, glm::vec3(2.0f, 2.0f, 2.0f));
+                    renderMeshComponent.m_transformMatrix = scale;
             // }
             // }
             const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();

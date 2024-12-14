@@ -128,9 +128,9 @@ namespace MagicRed::Rendering
         std::unique_ptr<GBufferStage> m_pGbufferStage;
         std::unique_ptr<BlinnPhongLightingStage> m_pLightingStage;
 
-        float rx {-356.757f}; // near plane
-        float ry {167.567f}; // Far plane
-        float rz {77.027f}; // ortho size
+        float rx {0.0f};
+        float ry {1.0f};
+        float rz {0.0f};
         float rm {3.14f * 3.0f / 2.0f};
 
         void initWindow();

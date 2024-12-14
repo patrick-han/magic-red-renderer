@@ -46,7 +46,7 @@ float calculateShadow(vec3 norm, vec3 fragWorldPos) {
     shadowSamplePos.xy += 0.5; // UV
 
     float inShadow = 0.0;
-    vec3 lightDir = normalize(-pushConstants.sceneData.directionalLight.direction); // Dirlight pointing down is (0,1,0)
+    vec3 lightDir = normalize(pushConstants.sceneData.directionalLight.direction); // Dirlight pointing down is (0,1,0)
     float bias = 0.005 * (1.0 - dot(norm, lightDir)); // Goes from 0.0 to 0.005 as the angle between the light and the normal increases
     float currentDepth = fragDirLightSpacePos.z;
 

@@ -16,3 +16,4 @@ namespace MagicRed::Rendering
 }
 
 #define DEBUG_DIRECTIONAL_LIGHT 0
+#define DEBUG_MODEL_NODE_HIERARCHY 0

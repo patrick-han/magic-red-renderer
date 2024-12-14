@@ -12,6 +12,7 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <Rendering/Material/MaterialCache.h>
 #include <Rendering/Material/Material.h>
 #include <Rendering/Core/Renderer.h>
+#include <Rendering/Core/RenderingConfig.h>
 #include <vulkan/vulkan.h>
 #include <Common/Log.h>
 #include <span>
@@ -77,8 +78,10 @@ namespace MagicRed::Resource
             vertex.position = glm::vec3(worldSpaceVertex.x, worldSpaceVertex.y, worldSpaceVertex.z);
             // vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
             vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-            if (mesh->HasTextureCoords(0))
-            {
+            if (mesh->HasTangentsAndBitangents()) {
+                vertex.tangent = glm::vec4(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z, 0.0f);
+            }
+            if (mesh->HasTextureCoords(0)) {
                 vertex.uv_x = mesh->mTextureCoords[0][i].x;
                 vertex.uv_y = mesh->mTextureCoords[0][i].y;
             }
@@ -297,13 +300,60 @@ namespace MagicRed::Resource
     , m_fileToGuidMap(_textureFileToGuidMapRef)
     {}
 
+    void DebugPrintNodeHierarchy(const aiNode* node, int depth = 0, const aiMatrix4x4& parentTransform = aiMatrix4x4()) {
+        std::string indent(depth * 2, ' ');
+        
+        // Get this node's transformation
+        aiMatrix4x4 transform = parentTransform * node->mTransformation;
+        
+        // Decompose the transformation matrix
+        aiVector3D scaling, position;
+        aiQuaternion rotation;
+        transform.Decompose(scaling, rotation, position);
+        
+        MRLOG(indent << "Node: " << node->mName.C_Str());
+        MRLOG(indent << "  Meshes: " << node->mNumMeshes);
+        MRLOG(indent << "  Position: " << position.x << ", " << position.y << ", " << position.z);
+        MRLOG(indent << "  Scale: " << scaling.x << ", " << scaling.y << ", " << scaling.z);
+        
+        // Print local transform (this node's transform only)
+        aiVector3D localScaling, localPosition;
+        aiQuaternion localRotation;
+        node->mTransformation.Decompose(localScaling, localRotation, localPosition);
+        if (localScaling.x != 1.0f || localScaling.y != 1.0f || localScaling.z != 1.0f ||
+            localPosition.x != 0.0f || localPosition.y != 0.0f || localPosition.z != 0.0f) {
+            MRLOG(indent << "  Local Transform:");
+            MRLOG(indent << "    Position: " << localPosition.x << ", " << localPosition.y << ", " << localPosition.z);
+            MRLOG(indent << "    Scale: " << localScaling.x << ", " << localScaling.y << ", " << localScaling.z);
+        }
+        
+        // Recursively print children
+        for (unsigned int i = 0; i < node->mNumChildren; i++) {
+            DebugPrintNodeHierarchy(node->mChildren[i], depth + 1, transform);
+        }
+    }
+
     void CPUModelLoader::LoadImmediately() {
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(m_filePath, aiProcess_Triangulate | aiProcess_FlipUVs);
-        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-        {
+        unsigned int flags = aiProcess_Triangulate
+                            | aiProcess_FlipUVs 
+                            | aiProcess_CalcTangentSpace
+                            | aiProcess_PreTransformVertices // Flattens all nodes and their relative transforms into a single node with "frozen: transforms
+                            ;
+        
+        const aiScene* scene = importer.ReadFile(m_filePath, flags);
+        
+        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
             MRCERR("Problem loading model: " << m_filePath);
+            return;
         }
+        
+        MRLOG("Loading model: " << m_filePath.filename());
+#if DEBUG_MODEL_NODE_HIERARCHY
+        MRLOG("Node hierarchy:");
+        DebugPrintNodeHierarchy(scene->mRootNode);
+#endif
+        
         glm::mat4x4 rootTransform = convertAssimpMatrix(scene->mRootNode->mTransformation);
         process_assimp_node(scene->mRootNode, scene, rootTransform);
     }
