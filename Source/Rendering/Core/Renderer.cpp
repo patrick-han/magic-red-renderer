@@ -104,9 +104,9 @@ namespace MagicRed::Rendering
 
     void Renderer::init_lights() {
         // Directional Light
-        m_directionalLight.direction.x = 0.01f;
-        m_directionalLight.direction.y = 1.0f;
-        m_directionalLight.direction.z = -0.01;
+        m_directionalLight.direction.x = 0.331f;
+        m_directionalLight.direction.y = 0.909f;
+        m_directionalLight.direction.z = 0.122f;
         m_directionalLight.power = 1.0f;
 
 
@@ -311,8 +311,8 @@ namespace MagicRed::Rendering
 
         // Shadowmap(s)
         {
-            // VkFormat shadowMapRTFormat = VK_FORMAT_D16_UNORM;
-            VkFormat shadowMapRTFormat = VK_FORMAT_D32_SFLOAT;
+            VkFormat shadowMapRTFormat = VK_FORMAT_D16_UNORM;
+            // VkFormat shadowMapRTFormat = VK_FORMAT_D32_SFLOAT;
             VkImageCreateInfo shadowMapRTImage_ci = image_create_info(shadowMapRTFormat
                 , {SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, 1}
                 , VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT 
@@ -375,8 +375,8 @@ namespace MagicRed::Rendering
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
                 .pNext = nullptr,
                 .viewMask = 0,
-                // .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
-                .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
+                .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
+                // .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
             };
             m_pShadowMapStage = std::make_unique<ShadowMapStage>(m_GfxDevice, &pipelineRenderingCI);
         }
