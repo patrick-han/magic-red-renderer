@@ -1,6 +1,4 @@
 #pragma once
-
-// #include <glm/vec3.hpp>
 #include <Common/Math/Vector3f.h>
 
 namespace MagicRed::Rendering
