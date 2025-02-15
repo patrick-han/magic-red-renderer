@@ -42,6 +42,7 @@ struct Vector4f {
     float Length() {
         return std::sqrt(x * x + y * y + z * z + w * w);
     }
+    Vector4f AsNormalized();
 };
 
 inline Vector4f operator+ (const Vector4f& left, const Vector4f& right) {
@@ -78,6 +79,21 @@ inline Vector4f operator* (const Vector4f& left, float scale) {
     result.z = scale * left.z;
     result.w = scale * left.w;
     return result;
+}
+
+inline Vector4f operator/ (const Vector4f& left, float div) {
+    Vector4f result;
+    result.x = left.x / div;
+    result.y = left.y / div;
+    result.z = left.z / div;
+    result.w = left.w / div;
+    return result;
+}
+
+inline Vector4f Vector4f::AsNormalized() {
+    float mag = Length();
+    Vector4f ret = *this / mag;
+    return ret;
 }
 
 inline float Dot(const Vector4f& left, const Vector4f& right) {

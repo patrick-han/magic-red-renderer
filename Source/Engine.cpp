@@ -30,8 +30,9 @@ namespace MagicRed
         MRLOG(std::format("c: {}, {}, {}", c.x, c.y, c.z));
         MRLOG(std::format("d: {}, {}, {}", d.x, d.y, d.z));
 
-        a *= 2.0f;
+        a = a.AsNormalized();
         MRLOG(std::format("a: {}, {}, {}", a.x, a.y, a.z));
+        exit(1);
         // Load Resources
          std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
          m_resourceManager.ImportModel(sponzaPath, false, Vector3f(0.0f, 0.0f, 0.0f), Vector3f(5.0f, 5.0f, 5.0f));

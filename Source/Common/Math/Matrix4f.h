@@ -136,6 +136,10 @@ public:
             , m03, m13, m23, m33
         );
     }
+
+    float Trace() {
+        return m00 + m11 + m22 + m33;
+    }
 };
 
 inline Vector4f operator* (const Matrix4f& mat, const Vector4f& v) {

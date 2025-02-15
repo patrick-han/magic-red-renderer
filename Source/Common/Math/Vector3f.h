@@ -2,6 +2,7 @@
 #include <cmath>
 
 namespace MagicRed {
+
 // Column vector
 struct Vector3f {
     float x;
@@ -37,6 +38,7 @@ struct Vector3f {
     float Length() {
         return std::sqrt(x * x + y * y + z * z);
     }
+    Vector3f AsNormalized();
 };
 
 inline Vector3f operator+ (const Vector3f& left, const Vector3f& right) {
@@ -71,8 +73,31 @@ inline Vector3f operator* (const Vector3f& left, float scale) {
     return result;
 }
 
+inline Vector3f operator/ (const Vector3f& left, float div) {
+    Vector3f result;
+    result.x = left.x / div;
+    result.y = left.y / div;
+    result.z = left.z / div;
+    return result;
+}
+
+inline Vector3f Vector3f::AsNormalized() {
+    float mag = Length();
+    Vector3f ret = *this / mag;
+    return ret;
+}
+
 inline float Dot(const Vector3f& left, const Vector3f& right) {
     return left.x * right.x + left.y * right.y + left.z * right.z;
 }
+
+inline Vector3f Cross(const Vector3f& left, const Vector3f& right) {
+    return Vector3f(
+          left.y * right.z - left.z * right.y
+        , left.z * right.x - left.x * right.z
+        , left.x * right.y - left.y * right.x
+    );
+}
+
 
 }
