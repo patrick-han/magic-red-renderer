@@ -37,6 +37,8 @@
 
 #include <External/stb_image.h>
 
+#include <Common/Math/Matrix4f.h>
+
 namespace MagicRed::Rendering
 {
     // Frame data
@@ -1095,10 +1097,40 @@ namespace MagicRed::Rendering
             // if (m_sceneRenderMeshComponents.size() > 0)
             // {
             RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
-                    glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 6.0f, 0.0f));
-                    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-                    glm::mat4 scale = glm::scale(rotate, glm::vec3(2.0f, 2.0f, 2.0f));
-                    renderMeshComponent.m_transformMatrix = scale;
+                    // glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 6.0f, 0.0f));
+                    // glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
+                    // glm::mat4 scale = glm::scale(rotate, glm::vec3(2.0f, 2.0f, 2.0f));
+                    // renderMeshComponent.m_transformMatrix = scale;
+
+                    
+                    Matrix4f translate = Matrix4f::MakeTranslate(rx, ry, rz);
+                    Matrix4f rotate = Matrix4f::MakeRotateX(0.0f);
+                    Matrix4f scale = Matrix4f::MakeScale(rm);
+                    Matrix4f tr = translate * rotate * scale;
+
+                    // glm is column major tho
+                    glm::mat4 t(1.0f);
+                    t[0][0] = tr.m00;
+                    t[1][0] = tr.m01;
+                    t[2][0] = tr.m02;
+                    t[3][0] = tr.m03;
+
+                    t[0][1] = tr.m10;
+                    t[1][1] = tr.m11;
+                    t[2][1] = tr.m12;
+                    t[3][1] = tr.m13;
+
+                    t[0][2] = tr.m20;
+                    t[1][2] = tr.m21;
+                    t[2][2] = tr.m22;
+                    t[3][2] = tr.m23;
+
+                    t[0][3] = tr.m30;
+                    t[1][3] = tr.m31;
+                    t[2][3] = tr.m32;
+                    t[3][3] = tr.m33;
+
+                    renderMeshComponent.m_transformMatrix = t;
             // }
             // }
             const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();

@@ -1,7 +1,8 @@
 #include "Engine.h"
 #include <Common/RootDir.h>
 #include <filesystem>
-
+#include <Common/Math/Vector3f.h>
+#include <Common/Log.h>
 
 namespace MagicRed
 {
@@ -18,12 +19,25 @@ namespace MagicRed
         m_resourceManager.SetProjectDirectory(gameDirectory);
         m_renderer.SetResourceManager(&m_resourceManager);
 
-        // Load Resources
-        std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
-        m_resourceManager.ImportModel(sponzaPath, false, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
 
-        std::filesystem::path beautifulGamePath("ABeautifulGame/ABeautifulGame.gltf");
-        m_resourceManager.ImportModel(beautifulGamePath, false, glm::vec3(5.0f, 6.0f, 0.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+        Vector3f a(1.0f, 2.0f, 3.0f);
+
+        Vector3f b(3.0f, 2.0f, 1.0f);
+
+        Vector3f c = 3 * a;
+        Vector3f d = a * 3;
+
+        MRLOG(std::format("c: {}, {}, {}", c.x, c.y, c.z));
+        MRLOG(std::format("d: {}, {}, {}", d.x, d.y, d.z));
+
+        a *= 2.0f;
+        MRLOG(std::format("a: {}, {}, {}", a.x, a.y, a.z));
+        // Load Resources
+         std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
+         m_resourceManager.ImportModel(sponzaPath, false, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
+
+        //std::filesystem::path beautifulGamePath("ABeautifulGame/ABeautifulGame.gltf");
+        //m_resourceManager.ImportModel(beautifulGamePath, false, glm::vec3(5.0f, 6.0f, 0.0f), glm::vec3(2.0f, 2.0f, 2.0f));
 
         // std::filesystem::path orientationTestPath("OrientationTest.glb");
         // m_resourceManager.ImportModel(orientationTestPath, true, glm::vec3(-8.0f, 6.0f, 0.0f), glm::vec3(0.25f, 0.25f, 0.25f));

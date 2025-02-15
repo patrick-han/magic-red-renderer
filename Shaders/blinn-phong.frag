@@ -24,6 +24,9 @@ vec4 sampleTextureLinear(texture2D tex, vec2 texCoords) {
 vec4 sampleTextureShadow(texture2D tex, vec2 texCoords) {
     return texture(sampler2D(tex, samplers[SHADOW_SAMPLER]), texCoords);
 }
+// float sampleTextureShadow(texture2D tex, vec2 texCoords, float compareValue) {
+//     return texture(sampler2DShadow(tex, samplers[SHADOW_SAMPLER]), vec3(texCoords, compareValue));
+// }
 
 
 layout (set = 1, binding = 0) uniform texture2D albedoBuffer;
@@ -77,26 +80,26 @@ float calculateShadow(vec3 norm, vec3 fragWorldPos) {
     float currentDepth = fragDirLightSpacePos.z;
 
     // PCF: Simple average over a 3x3 neighborhood
-    // vec2 texelSize = vec2(1.0) / textureSize(directionalLightShadowMap, 0);
-    // for (int x = -1; x <= 1; x++) {
-    //     for (int y = -1; y <= 1; y++) {
-    //         vec2 offset = vec2(x,y) * texelSize;
-    //         float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + offset).r;
-    //         if (shadowMapDepth < (currentDepth)) {
-    //             inShadow += 1.0;
-    //         }
-    //     }
-    // }
-    // inShadow /= 9.0;
-
-    // Noisy stratified poisson
-    for (int i = 0; i < 4; i++){
-        int index = int(16.0 * random(floor(fragWorldPos.xyz * 1000.0), i)) % 16;
-        float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + (poissonDisk[index] / 700.0) ).r;
-        if (shadowMapDepth < (currentDepth)) {
-            inShadow += 0.25;
+    vec2 texelSize = vec2(1.0) / textureSize(directionalLightShadowMap, 0);
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            vec2 offset = vec2(x,y) * texelSize;
+            float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + offset).r;
+            if (shadowMapDepth < (currentDepth)) {
+                inShadow += 1.0;
+            }
         }
     }
+    inShadow /= 9.0;
+
+    // Noisy stratified poisson
+    // for (int i = 0; i < 4; i++){
+    //     int index = int(16.0 * random(floor(fragWorldPos.xyz * 1000.0), i)) % 16;
+    //     float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + (poissonDisk[index] / 700.0) ).r;
+    //     if (shadowMapDepth < (currentDepth)) {
+    //         inShadow += 0.25;
+    //     }
+    // }
 
     return inShadow;
 }
