@@ -157,6 +157,8 @@ namespace MagicRed::Rendering
                 .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
                 .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
                 .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                // .compareEnable = VK_TRUE,
+                // .compareOp = VK_COMPARE_OP_GREATER_OR_EQUAL,
                 .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE // All coordinates projected outside of shadowmap just map to 1.0, i.e. not in shadow
             };
         vkCreateSampler(m_GfxDevice, &shadowSamplerCI, nullptr, &m_shadowSampler);

@@ -12,7 +12,7 @@ namespace MagicRed::Rendering
     inline constexpr uint32_t WINDOW_HEIGHT = 800;
 #endif
     inline constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-    inline constexpr uint32_t SHADOWMAP_RESOLUTION = 1024;
+    inline constexpr uint32_t SHADOWMAP_RESOLUTION = 4096;
 }
 
 #define DEBUG_DIRECTIONAL_LIGHT 0

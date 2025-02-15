@@ -341,7 +341,7 @@ namespace MagicRed::Resource
                             | aiProcess_PreTransformVertices // Flattens all nodes and their relative transforms into a single node with "frozen: transforms
                             ;
         
-        const aiScene* scene = importer.ReadFile(m_filePath, flags);
+        const aiScene* scene = importer.ReadFile(m_filePath.string(), flags);
         
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
             MRCERR("Problem loading model: " << m_filePath);
