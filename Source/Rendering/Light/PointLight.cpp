@@ -8,6 +8,8 @@ namespace MagicRed::Rendering
         , ambient(_color)
         , diffuse(_color)
         , specular(_color)
-        , attenuationTerms{constantAtten, linearAtten, quadraticAtten}
+        , constantAttenuation(constantAtten)
+        , linearAttenuation(linearAtten)
+        , quadraticAttenuation(quadraticAtten)
     {}
 }

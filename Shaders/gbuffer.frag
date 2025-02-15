@@ -5,9 +5,10 @@
 #include "scene_data.glsl"
 
 layout(location = 0) in vec3 fragWorldPos;
-layout(location = 1) in vec3 fragWorldNormal;
+layout(location = 1) in vec3 fragWorldSurfaceNormal;
 layout(location = 2) in vec2 textureCoords;
 layout(location = 3) in vec4 fragColor;
+layout(location = 4) in mat3 inTBN;
 
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec3 outNormal;
@@ -31,8 +32,9 @@ void main() {
 #endif
     
     vec3 metallicRoughnessColor = texture(sampler2D(textures[materialData.metallicRoughnessTex], linearSampler), textureCoords).rgb;
+    vec3 normalColor = inTBN * (texture(sampler2D(textures[materialData.normalTex], linearSampler), textureCoords).rgb * 2.0 - 1.0); // [0, 1] to [-1, 1]
 
     outColor = diffuseTexColor;
-    outNormal.rgb = normalize(fragWorldNormal) * 0.5 + 0.5; // Map from [-1, 1] to [0, 1]
+    outNormal.rgb = normalize(normalColor) * 0.5 + 0.5; // [-1, 1] back to [0, 1]
     outMetallicRoughness.rg = metallicRoughnessColor.gb;
 }

@@ -20,4 +20,18 @@ namespace MagicRed::Rendering
             return defaultPushConstantRange;
         }
     };
+
+    struct ShadowMapPushConstants {
+        glm::mat4 model;
+        VkDeviceAddress sceneDataBufferAddress;
+
+        static constexpr VkPushConstantRange range() {
+            VkPushConstantRange shadowMapPushConstantRange = {
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                .offset = 0,
+                .size = sizeof(ShadowMapPushConstants)
+            };
+            return shadowMapPushConstantRange;
+        }
+    };
 }

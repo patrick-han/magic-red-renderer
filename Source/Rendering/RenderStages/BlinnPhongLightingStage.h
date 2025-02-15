@@ -22,7 +22,7 @@ namespace MagicRed::Rendering
         static constexpr std::array<VkPushConstantRange, 1> m_pushConstantRanges = {DefaultPushConstants::range()};
 
     public:
-        // BlinnPhongLightingStage() = delete;
+        BlinnPhongLightingStage() = delete;
         BlinnPhongLightingStage(
             const GfxDevice& _gfxDevice,
             const VkPipelineRenderingCreateInfoKHR* _pipelineRenderingCreateInfo,
@@ -32,7 +32,8 @@ namespace MagicRed::Rendering
             const VkDescriptorSet _bindlessDescriptorSet,
             GPUTextureId _albedoRTId,
             GPUTextureId _worldNormalsRTId,
-            GPUTextureId _metallicRoughnessRTId
+            GPUTextureId _metallicRoughnessRTId,
+            GPUTextureId _directionalLightShadowMap
         );
         ~BlinnPhongLightingStage();
         BlinnPhongLightingStage(const BlinnPhongLightingStage&) = delete;

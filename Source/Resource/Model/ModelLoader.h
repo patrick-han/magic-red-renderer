@@ -3,6 +3,7 @@
 #include <Common/IdTypes.h>
 #include <Rendering/Texture/TextureData.h>
 #include <Rendering/Material/Material.h>
+#include <Resource/TextureLoader.h>
 #include <filesystem>
 #include <glm/mat4x4.hpp>
 #include <unordered_map>
@@ -29,14 +30,8 @@ namespace MagicRed::Resource
         CPUModelLoader(
             MagicRed::Rendering::Renderer* _pRenderer
             , bool _texturesEmbedded
-            , std::string _filePath
-            , std::unordered_map<std::string, GUID>& _textureFileToGuidMapRef
-        );
-        CPUModelLoader(
-            MagicRed::Rendering::Renderer* _pRenderer
-            , bool _texturesEmbedded
             , std::filesystem::path _filePath
-            , std::unordered_map<std::string, GUID>& _textureFileToGuidMapRef
+            , std::unordered_map<std::filesystem::path, GUID>& _textureFileToGuidMapRef
         );
         void LoadImmediately();
         std::vector<MagicRed::Rendering::CPUMesh> m_cpuMeshes;
@@ -49,20 +44,22 @@ namespace MagicRed::Resource
         //  V             V
         // TextureGuid    TextureGuid
         inline int NumberOfTexturesLoaded() {
-            return static_cast<int>(m_textureFileToGuidMapRef.size());
+            return static_cast<int>(m_fileToGuidMap.size());
         }
     private:
         MagicRed::Rendering::Renderer* m_pRenderer;
         bool m_texturesEmbedded;
-        const std::string m_filePath; // TODO
-        const std::filesystem::path m_path;
-        std::unordered_map<std::string, GUID>& m_textureFileToGuidMapRef;
+        const std::filesystem::path m_filePath;
+
+
+        
+        std::unordered_map<std::filesystem::path, GUID>& m_fileToGuidMap;
+        TextureLoader m_textureLoader {m_pRenderer, m_fileToGuidMap};
 
         // Mapping from assimp mesh material index to MaterialId to keep track
         // of materials that have already been loaded while parsing assimp structure
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
-        void load_texture_from_filename(const aiMaterial* material, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial);
         void load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial);
         void process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix);
         void process_assimp_node(aiNode *node, const aiScene *scene, const glm::mat4x4& accumulateMatrix);

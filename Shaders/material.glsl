@@ -11,7 +11,7 @@ struct MaterialData {
     uint emissiveTex;
 };
 
-layout (buffer_reference, std430) readonly buffer MaterialDataBuffer {
+layout (buffer_reference, scalar) readonly buffer MaterialDataBuffer {
     MaterialData data[];
 } materialDataBuffer;
 

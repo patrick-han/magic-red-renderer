@@ -155,7 +155,7 @@ namespace MagicRed::Rendering
         info.format = format;
         info.extent = extent;
 
-        info.mipLevels = 1;
+        info.mipLevels = 1; // TODO: Generate mipmaps
         info.arrayLayers = 1;
 
         // For MSAA. we will not be using it by default, so default it to 1 sample per pixel.

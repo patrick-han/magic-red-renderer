@@ -11,25 +11,108 @@ layout(location = 0) out vec4 outColor;
 #include "mesh_push_constants.glsl"
 
 // TODO subpasses w/ VK_KHR_dynamic_rendering_local_read
-layout (set = 0, binding = 0) uniform sampler linearSampler;
+// layout (set = 0, binding = 0) uniform sampler linearSampler;
+#define LINEAR_SAMPLER 0
+#define SHADOW_SAMPLER 1
+layout (set = 0, binding = 0) uniform sampler samplers[];
 layout (set = 0, binding = 1) uniform texture2D textures[];
+
+vec4 sampleTextureLinear(texture2D tex, vec2 texCoords) {
+    return texture(sampler2D(tex, samplers[LINEAR_SAMPLER]), texCoords);
+}
+
+vec4 sampleTextureShadow(texture2D tex, vec2 texCoords) {
+    return texture(sampler2D(tex, samplers[SHADOW_SAMPLER]), texCoords);
+}
+
 
 layout (set = 1, binding = 0) uniform texture2D albedoBuffer;
 layout (set = 1, binding = 1) uniform texture2D normalsBuffer;
 layout (set = 1, binding = 2) uniform texture2D metallicRoughnessBuffer;
 layout (set = 1, binding = 3) uniform texture2D depthBuffer; // For reconstructing world space positions
 
+layout (set = 1, binding = 4) uniform texture2D directionalLightShadowMap;
+
+vec2 poissonDisk[16] = vec2[]( 
+   vec2( -0.94201624, -0.39906216 ), 
+   vec2( 0.94558609, -0.76890725 ), 
+   vec2( -0.094184101, -0.92938870 ), 
+   vec2( 0.34495938, 0.29387760 ), 
+   vec2( -0.91588581, 0.45771432 ), 
+   vec2( -0.81544232, -0.87912464 ), 
+   vec2( -0.38277543, 0.27676845 ), 
+   vec2( 0.97484398, 0.75648379 ), 
+   vec2( 0.44323325, -0.97511554 ), 
+   vec2( 0.53742981, -0.47373420 ), 
+   vec2( -0.26496911, -0.41893023 ), 
+   vec2( 0.79197514, 0.19090188 ), 
+   vec2( -0.24188840, 0.99706507 ), 
+   vec2( -0.81409955, 0.91437590 ), 
+   vec2( 0.19984126, 0.78641367 ), 
+   vec2( 0.14383161, -0.14100790 ) 
+);
+
+// Returns a random number based on a vec3 and an int.
+float random(vec3 seed, int i){
+	vec4 seed4 = vec4(seed,i);
+	float dot_product = dot(seed4, vec4(12.9898, 78.233, 45.164, 94.673));
+	return fract(sin(dot_product) * 43758.5453);
+}
+
+float calculateShadow(vec3 norm, vec3 fragWorldPos) {
+    vec4 fragDirLightSpacePos = pushConstants.sceneData.directionalLightViewProjection * vec4(fragWorldPos, 1.0);
+    vec3 shadowSamplePos = fragDirLightSpacePos.xyz / fragDirLightSpacePos.w;
+
+    // Fix oversampling outside the far plane of the light orthographic frustum
+    if (shadowSamplePos.z > 1.0) {
+        return 0.0;
+    }
+
+    shadowSamplePos.xy *= 0.5;
+    shadowSamplePos.xy += 0.5; // UV
+
+    float inShadow = 0.0;
+    // vec3 lightDir = normalize(pushConstants.sceneData.directionalLight.direction); // Dirlight pointing down is (0,1,0)
+    // float bias = 0.005 * (1.0 - dot(norm, lightDir)); // Goes from 0.0 to 0.005 as the angle between the light and the normal increases
+    float currentDepth = fragDirLightSpacePos.z;
+
+    // PCF: Simple average over a 3x3 neighborhood
+    // vec2 texelSize = vec2(1.0) / textureSize(directionalLightShadowMap, 0);
+    // for (int x = -1; x <= 1; x++) {
+    //     for (int y = -1; y <= 1; y++) {
+    //         vec2 offset = vec2(x,y) * texelSize;
+    //         float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + offset).r;
+    //         if (shadowMapDepth < (currentDepth)) {
+    //             inShadow += 1.0;
+    //         }
+    //     }
+    // }
+    // inShadow /= 9.0;
+
+    // Noisy stratified poisson
+    for (int i = 0; i < 4; i++){
+        int index = int(16.0 * random(floor(fragWorldPos.xyz * 1000.0), i)) % 16;
+        float shadowMapDepth = sampleTextureShadow(directionalLightShadowMap, shadowSamplePos.xy + (poissonDisk[index] / 700.0) ).r;
+        if (shadowMapDepth < (currentDepth)) {
+            inShadow += 0.25;
+        }
+    }
+
+    return inShadow;
+}
+
 vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRoughnessColor, vec3 sampledNormal, vec3 fragWorldPos)
 {
+    vec3 norm = normalize(sampledNormal);
     vec3 lightColor = vec3(pushConstants.sceneData.directionalLight.power); // TODO: Directional light color?
+    float inShadow = calculateShadow(norm, fragWorldPos);
 
     // Ambient
     float ambientStrength = 0.1;
     vec3 ambient = diffuseTexColor * ambientStrength * lightColor;
 
     // Diffuse
-    vec3 fragToLightDir = normalize(-pushConstants.sceneData.directionalLight.direction);
-    vec3 norm = normalize(sampledNormal);
+    vec3 fragToLightDir = normalize(pushConstants.sceneData.directionalLight.direction);
     float difference = max(dot(fragToLightDir, norm), 0.0);
     vec3 diffuse = diffuseTexColor * difference * lightColor;
 
@@ -41,7 +124,7 @@ vec3 calculateDirectionalLightContribution(vec3 diffuseTexColor, vec2 metallicRo
     float specularDifference = pow(max(dot(norm, halfwayDir), 0.0), 32);
     vec3 specular = specularStrength * specularDifference * lightColor;
 
-    vec3 result = (ambient + diffuse + specular);
+    vec3 result = (ambient + diffuse + specular) * (1.0 - inShadow);
     return result;
 }
 
@@ -89,12 +172,9 @@ vec3 calculatePointLightsContribution(int pointLightIndex, vec3 diffuseTexColor,
 
 void main() {
     // Sample GBuffer
-    // vec3 sampledColor = texture(sampler2D(albedoBuffer, linearSampler), textureCoords).rgb;
-    // vec3 sampledNormal = normalize(texture(sampler2D(normalsBuffer, linearSampler), textureCoords).rgb * 2.0 - 1.0);
-    // vec2 sampledMetallicRoughness = texture(sampler2D(metallicRoughnessBuffer, linearSampler), textureCoords).rg;
-    vec3 sampledColor = texelFetch(sampler2D(albedoBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb;
-    vec3 sampledNormal = normalize(texelFetch(sampler2D(normalsBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rgb * 2.0 - 1.0);
-    vec2 sampledMetallicRoughness = texelFetch(sampler2D(metallicRoughnessBuffer, linearSampler), ivec2(gl_FragCoord.xy), 0).rg;
+    vec3 sampledColor = texelFetch(sampler2D(albedoBuffer, samplers[LINEAR_SAMPLER]), ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 sampledNormal = normalize(texelFetch(sampler2D(normalsBuffer, samplers[LINEAR_SAMPLER]), ivec2(gl_FragCoord.xy), 0).rgb * 2.0 - 1.0);
+    vec2 sampledMetallicRoughness = texelFetch(sampler2D(metallicRoughnessBuffer, samplers[LINEAR_SAMPLER]), ivec2(gl_FragCoord.xy), 0).rg;
     float sampledDepth = texelFetch(depthBuffer, ivec2(gl_FragCoord.xy), 0).r;
     // x,y are [0, 1] and so is depth-z [0, 1]
     // sampledDepth = sampledDepth * 2.0 - 1.0; // [-1, 1] // In Vulkan, NDC is [0, 1] in z, unlike OpenGL which expects [-1, 1]

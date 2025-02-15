@@ -22,15 +22,16 @@
 
 #include <Camera/Camera.h>
 #include <Common/Log.h>
-#include <Rendering/Mesh/Mesh.h>
-#include <Resource/Model/Model.h>
 
+#include <Rendering/Mesh/Mesh.h>
 #include <Rendering/Image/Image.h>
 #include <Rendering/Wrappers/ImageMemoryBarrier.h>
 #include <Rendering/Wrappers/DynamicRendering.h>
-
 #include <Rendering/Core/RenderingDefaults.h>
 #include <Rendering/Descriptor/Descriptor.h>
+
+#include <Resource/Model/ModelLoader.h>
+#include <Resource/ResourceManager.h>
 
 #include <IncludeHelpers/ImguiIncludes.h>
 
@@ -45,7 +46,7 @@ namespace MagicRed::Rendering
     static uint64_t currentFrameTick = 0;
 
     // Camera
-    static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -2.0f);
+    static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
     static glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     static glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     static Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
@@ -64,7 +65,8 @@ namespace MagicRed::Rendering
     void Renderer::run() {
         update_material_data();           // Upload material data to the GPU
         init_scene_data();              // Initialize the scene data like matrices and buffer pointers, and upload the buffer
-        update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
+        m_bindlessManager.UpdateBindlessTextures();
+        m_bindlessManager.UpdateBindlessSamplers(m_linearSampler, m_shadowSampler);
         mainLoop();
     }
 
@@ -88,7 +90,8 @@ namespace MagicRed::Rendering
         m_GfxDevice.init(m_window);
         init_lights();                  // Create light objects on CPU side and upload them to the per fif light buffers
         create_samplers();              // Create sampler objects via handles
-        init_bindless_descriptors();    // Create descriptor pool and descriptor set for the bindless resources
+        m_bindlessManager.InitBindlessDescriptors();
+        // init_bindless_descriptors();    // Create descriptor pool and descriptor set for the bindless resources
         init_assets();                  // Load assets (mesh + textures -> materials) into CPU side, then onto the GPU
 
         init_global_descriptor_pool();  // Create global descriptor pool used only for render textures atm
@@ -96,22 +99,20 @@ namespace MagicRed::Rendering
         init_render_textures();         // Initialize gpu-only images as a part of the TextureCache's rendertextures portion
         init_render_stages();           // Initialize stage objects which only require knowledge of _formats_ for now. The actual image handles are specified when drawing via ImageViews
 
-        // update_bindless_texture_descriptors();   // Update the bindless descriptor set with the actual gpu-resident textures
-
         init_imgui();
     }
 
     void Renderer::init_lights() {
         // Directional Light
-        m_directionalLight.direction.x = -0.2f;
-        m_directionalLight.direction.y = -1.0f;
-        m_directionalLight.direction.z = -0.3f;
+        m_directionalLight.direction.x = 0.331f;
+        m_directionalLight.direction.y = 0.909f;
+        m_directionalLight.direction.z = 0.122f;
         m_directionalLight.power = 1.0f;
 
 
         // Point lights
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 223.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(45.0f/255.0f, 25.0f/255.0f, 188.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
 
         if (m_CPUPointLights.size() > 0)
         {
@@ -148,91 +149,19 @@ namespace MagicRed::Rendering
                 // .maxAnisotropy = maxAnisotropy,
             };
         vkCreateSampler(m_GfxDevice, &linearCI, nullptr, &m_linearSampler);
-        VkSamplerCreateInfo nearestCI = {
+        VkSamplerCreateInfo shadowSamplerCI = {
                 .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-                .magFilter = VK_FILTER_NEAREST,
-                .minFilter = VK_FILTER_NEAREST,
-                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                .magFilter = VK_FILTER_LINEAR,
+                .minFilter = VK_FILTER_LINEAR,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                // .compareEnable = VK_TRUE,
+                // .compareOp = VK_COMPARE_OP_GREATER_OR_EQUAL,
+                .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE // All coordinates projected outside of shadowmap just map to 1.0, i.e. not in shadow
             };
-        vkCreateSampler(m_GfxDevice, &nearestCI, nullptr, &m_nearestSampler);
-    }
-
-    void Renderer::init_bindless_descriptors() {
-        constexpr uint32_t maxBindlessResourceCount = 16536; // Requires MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS
-        constexpr uint32_t maxSamplerCount = 1;
-
-        // Create a global descriptor pool, and let it know how many of each descriptor type we want up front
-        std::array<VkDescriptorPoolSize, 2> bindlessDescriptorPoolSizes {{
-            { VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplerCount}, // TODO: We'll just have 1 nearest and 1 linear sampler for now
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxBindlessResourceCount}
-        }};
-        VkDescriptorPoolCreateInfo poolCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT, // Allows us to update textures in a bindless array
-            // .maxSets = maxBindlessResourceCount * static_cast<uint32_t>(bindlessDescriptorPoolSizes.size()), // ?
-            .maxSets = maxBindlessResourceCount + maxSamplerCount, // ? potentially 1 set for each resource
-            .poolSizeCount = static_cast<uint32_t>(bindlessDescriptorPoolSizes.size()),
-            .pPoolSizes = bindlessDescriptorPoolSizes.data()
-        };
-        vkCreateDescriptorPool(m_GfxDevice, &poolCreateInfo, nullptr, &m_bindlessPool);
-
-        // Build a descriptor set layout
-        std::vector<VkDescriptorSetLayoutBinding> bindlessDescriptorSetLayoutBindings;
-        uint32_t bindingIndex = 0;
-        for(VkDescriptorPoolSize poolSize : bindlessDescriptorPoolSizes)
-        {
-            VkDescriptorSetLayoutBinding newBinding = {
-                .binding = bindingIndex,
-                .descriptorType = poolSize.type,
-                .descriptorCount = poolSize.descriptorCount,
-                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .pImmutableSamplers = nullptr
-            };
-            bindlessDescriptorSetLayoutBindings.push_back(newBinding);
-            bindingIndex++;
-        }
-        // Flags required for bindless stuff
-        // We only need a single layout since they are all the same for each frame in flight
-        // m_sceneDataDescriptorSetLayouts.push_back(layoutBuilder.buildLayout(m_GfxDevice, VK_SHADER_STAGE_FRAGMENT_BIT));
-        const VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT
-                                                        | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-        std::vector<VkDescriptorBindingFlags> descriptorBindingFlags;
-        for(size_t i = 0; i < bindlessDescriptorSetLayoutBindings.size(); i++)
-        {
-            descriptorBindingFlags.push_back(bindlessFlags);
-        }
-        descriptorBindingFlags.back() |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT; // Permits use of variable array size for a set (with the caveat that only the last binding in the set can be of variable length)
-        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedBindingInfo {
-            .sType =  VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-            .bindingCount = static_cast<uint32_t>(descriptorBindingFlags.size()),
-            .pBindingFlags = descriptorBindingFlags.data()
-        };
-        VkDescriptorSetLayoutCreateInfo bindlessSetLayoutCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .pNext = &extendedBindingInfo,
-            .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-            .bindingCount = static_cast<uint32_t>(bindlessDescriptorSetLayoutBindings.size()),
-            .pBindings = bindlessDescriptorSetLayoutBindings.data()
-        };
-        vkCreateDescriptorSetLayout(m_GfxDevice, &bindlessSetLayoutCreateInfo, nullptr, &m_bindlessDescriptorSetLayout);
-
-        // Allocate the descriptor set
-        uint32_t maxBinding = maxBindlessResourceCount - 1;
-        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variableDescriptorCountInfo {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
-            .descriptorSetCount = 1,
-            .pDescriptorCounts = &maxBinding // Number of descriptors, -1?
-        };
-        VkDescriptorSetAllocateInfo allocateInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .pNext = &variableDescriptorCountInfo,
-            .descriptorPool = m_bindlessPool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &m_bindlessDescriptorSetLayout
-        };
-
-        vkAllocateDescriptorSets(m_GfxDevice, &allocateInfo, &m_bindlessDescriptorSet);
+        vkCreateSampler(m_GfxDevice, &shadowSamplerCI, nullptr, &m_shadowSampler);
     }
 
     void Renderer::init_assets() {
@@ -382,6 +311,19 @@ namespace MagicRed::Rendering
     void Renderer::init_render_textures() {
         VkExtent3D fullFrameBufferExtent = {.width = WINDOW_WIDTH, .height = WINDOW_HEIGHT, .depth = 1};
 
+        // Shadowmap(s)
+        {
+            VkFormat shadowMapRTFormat = VK_FORMAT_D16_UNORM;
+            // VkFormat shadowMapRTFormat = VK_FORMAT_D32_SFLOAT;
+            VkImageCreateInfo shadowMapRTImage_ci = image_create_info(shadowMapRTFormat
+                , {SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, 1}
+                , VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT 
+                | VK_IMAGE_USAGE_SAMPLED_BIT // Lighting alternative read in
+                , VK_IMAGE_TYPE_2D
+                );
+            m_directionalShadowMapRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, shadowMapRTImage_ci);
+        }
+
         // G Buffer
         {
 
@@ -394,7 +336,7 @@ namespace MagicRed::Rendering
                 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,    // TODO: Copy from to swapchain
                 VK_IMAGE_TYPE_2D
             );
-            m_albedoRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, albedoRTFormat, albedoRTImage_ci);
+            m_albedoRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, albedoRTImage_ci);
 
             VkFormat worldNormalsRTFormat = VK_FORMAT_A2R10G10B10_UNORM_PACK32;
             VkImageCreateInfo worldNormalsRTImage_ci = image_create_info(worldNormalsRTFormat, fullFrameBufferExtent,
@@ -403,7 +345,7 @@ namespace MagicRed::Rendering
                 // | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, // Input to deferred lighting // TODO: subpass
                 VK_IMAGE_TYPE_2D
             );
-            m_worldNormalsRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, worldNormalsRTFormat, worldNormalsRTImage_ci);
+            m_worldNormalsRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, worldNormalsRTImage_ci);
 
             VkFormat metallicRoughnessRTFormat = VK_FORMAT_R8G8_UNORM;
             VkImageCreateInfo metallicRoughnessRTImage_ci = image_create_info(metallicRoughnessRTFormat, fullFrameBufferExtent,
@@ -412,7 +354,7 @@ namespace MagicRed::Rendering
                 // | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, // Input to deferred lighting // TODO: subpass
                 VK_IMAGE_TYPE_2D
             );
-            m_metallicRoughnessRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, metallicRoughnessRTFormat, metallicRoughnessRTImage_ci);
+            m_metallicRoughnessRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, metallicRoughnessRTImage_ci);
         }
 
         // Lighting
@@ -423,12 +365,25 @@ namespace MagicRed::Rendering
                 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,    // TODO: Copy from to swapchain
                 VK_IMAGE_TYPE_2D
             );
-            m_lightingRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, lightingRTFormat, lightingRTImage_ci);
+            m_lightingRTId = m_RenderTextureCache.add_render_texture(m_GfxDevice, lightingRTImage_ci);
         }
     }
 
 
     void Renderer::init_render_stages() {
+        {
+            // Shadowmap
+            VkPipelineRenderingCreateInfoKHR pipelineRenderingCI = {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+                .pNext = nullptr,
+                .viewMask = 0,
+                .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
+                // .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
+            };
+            m_pShadowMapStage = std::make_unique<ShadowMapStage>(m_GfxDevice, &pipelineRenderingCI);
+        }
+
+
         {
             // GBuffer
             VkFormat colorAttachmentFormats[3] = {
@@ -442,15 +397,16 @@ namespace MagicRed::Rendering
                 .viewMask = 0,
                 .colorAttachmentCount = 3,
                 .pColorAttachmentFormats = colorAttachmentFormats,
-                .depthAttachmentFormat = m_GfxDevice.m_depthImage.imageFormat, // TODO: we're not writing to depth, so this doesnt need to be passed?
+                .depthAttachmentFormat = m_GfxDevice.m_depthImage.imageFormat,
                 .stencilAttachmentFormat = {}
             };
 
             // m_renderStages.push_back(std::make_unique<GBufferStage>(m_GfxDevice, &pipelineRenderingCI, std::span<VkDescriptorSetLayout const>(std::array<VkDescriptorSetLayout, 1>{m_bindlessDescriptorSetLayout})));
             m_pGbufferStage = std::make_unique<GBufferStage>(
                 m_GfxDevice, &pipelineRenderingCI,
-                m_bindlessDescriptorSetLayout,
-                m_bindlessDescriptorSet);
+                m_bindlessManager.GetBindlessDescriptorSetLayout(),
+                m_bindlessManager.GetBindlessDescriptorSet()
+            );
         }
 
 
@@ -473,24 +429,18 @@ namespace MagicRed::Rendering
                 , &lightingPipelineRenderingCI
                 , m_RenderTextureCache
                 , m_globalDescriptorPool
-                , m_bindlessDescriptorSetLayout
-                , m_bindlessDescriptorSet
+                , m_bindlessManager.GetBindlessDescriptorSetLayout()
+                , m_bindlessManager.GetBindlessDescriptorSet()
                 , m_albedoRTId
                 , m_worldNormalsRTId
                 , m_metallicRoughnessRTId
+                , m_directionalShadowMapRTId
             );
         }
     }
 
     void Renderer::init_scene_data() {
-        m_CPUSceneData.view = camera.get_view_matrix();
-        glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f);
-        projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
-        m_CPUSceneData.projection = projection;
-        m_CPUSceneData.cameraWorldPosition = camera.get_world_position();
-        m_CPUSceneData.lightBufferAddress = 0; // TODO during update_scene_data()? or now
-        m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
-        m_CPUSceneData.directionalLight = m_directionalLight;
+        // Honestly I should init things here like in update_scene_data() but I really don't care about the first frame tbh and it basically does not matter at all
 
         // GPUMaterial data only set once at the beginning, since for now we are loading all assets in ahead of time
         VkBufferDeviceAddressInfoKHR materialBufferAddressInfo{
@@ -518,55 +468,6 @@ namespace MagicRed::Rendering
             };
             sceneDataBuffer.gpuAddress  = vkGetBufferDeviceAddress(m_GfxDevice, &sceneDataBufferAddressInfo);
         }
-    }
-
-    void Renderer::update_bindless_texture_descriptors() {
-
-        // TODO: should batch things per frame?
-
-        // Done like this instead of constructing temps in a for loop because of pImageInfo
-        std::vector<VkDescriptorImageInfo> textureInfos;
-        std::vector<VkWriteDescriptorSet> textureDescriptorWrites;
-        textureInfos.resize(m_TextureCache.get_gpu_texture_count());
-        textureDescriptorWrites.resize(m_TextureCache.get_gpu_texture_count());
-
-        for (uint32_t i = 0; i < m_TextureCache.get_gpu_texture_count(); i++)
-        {
-            textureInfos[i].imageView = m_TextureCache.get_texture(i).allocatedImage.imageView;
-            textureInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            textureDescriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            textureDescriptorWrites[i].pNext = nullptr;
-            textureDescriptorWrites[i].dstSet = m_bindlessDescriptorSet;
-            textureDescriptorWrites[i].dstBinding = 1;
-            textureDescriptorWrites[i].dstArrayElement = i;
-            textureDescriptorWrites[i].descriptorCount = 1;
-            textureDescriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            textureDescriptorWrites[i].pImageInfo = &textureInfos[i];
-            textureDescriptorWrites[i].pBufferInfo = nullptr;
-            textureDescriptorWrites[i].pTexelBufferView = nullptr;
-        }
-
-        vkUpdateDescriptorSets(m_GfxDevice, static_cast<uint32_t>(textureDescriptorWrites.size()), textureDescriptorWrites.data(), 0, nullptr);
-
-
-        VkDescriptorImageInfo linearSamplerInfo = {
-            .sampler = m_linearSampler
-        };
-        VkWriteDescriptorSet linearSamplerDescriptorWrite = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
-            .dstSet = m_bindlessDescriptorSet,
-            .dstBinding = 0,
-            .dstArrayElement = {},
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .pImageInfo = &linearSamplerInfo,
-            .pBufferInfo = nullptr,
-            .pTexelBufferView = nullptr
-        };
-
-        vkUpdateDescriptorSets(m_GfxDevice, 1, &linearSamplerDescriptorWrite, 0, nullptr);
     }
 
     void Renderer::init_imgui() {
@@ -652,9 +553,9 @@ namespace MagicRed::Rendering
             int lightCircleRadius = 2;
             float lightCircleSpeed = 0.02f;
             m_CPUPointLights[0].worldSpacePosition = glm::vec3(
-                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
-                0.0,
-                lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
+               lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
+               0.0,
+               lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
             );
             m_CPUPointLights[1].worldSpacePosition = glm::vec3(
                 lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
@@ -677,7 +578,22 @@ namespace MagicRed::Rendering
         glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f);
         projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
         m_CPUSceneData.projection = projection;
-        m_CPUSceneData.cameraWorldPosition = camera.get_world_position();
+
+        float near_plane = -356.757f, far_plane = 167.567f;
+        float ortho_size = 77.027f;  // Adjust based on your scene size
+        glm::mat4 directionalLightProjection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
+        directionalLightProjection[1][1] *= -1;
+        glm::mat4 directionalLightView = glm::lookAt(
+            m_directionalLight.direction, 
+            glm::vec3(0.0f, 0.0f, 0.0f), 
+            glm::vec3(0.0f, 1.0f, 0.0f));
+        m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
+#if DEBUG_DIRECTIONAL_LIGHT
+        m_CPUSceneData.view = directionalLightView;
+        m_CPUSceneData.projection = directionalLightProjection;
+#endif
+
+        m_CPUSceneData.cameraWorldPosition = glm::vec4(camera.get_world_position(), 1.0f);
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;
         m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
         m_CPUSceneData.directionalLight = m_directionalLight;
@@ -715,6 +631,49 @@ namespace MagicRed::Rendering
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+            PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdBeginRenderingKHR"));
+            PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdEndRenderingKHR"));
+
+            // Transition shadowmap depth image to be written to in renderpass
+            {
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
+                    m_RenderTextureCache.get_render_texture(m_directionalShadowMapRTId).allocatedImage.image,
+                    VK_ACCESS_NONE,
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_ASPECT_DEPTH_BIT
+                );
+                vkCmdPipelineBarrier(
+                    cmdBuffer,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    {},
+                    0, nullptr,
+                    0, nullptr,
+                    1, &imb
+                );
+            }
+
+            {
+                VkRenderingAttachmentInfoKHR depthAttachmentInfo  = rendering_attachment_info(
+                    m_RenderTextureCache.get_render_texture(m_directionalShadowMapRTId).allocatedImage.imageView,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    &DEFAULT_CLEAR_VALUE_DEPTH
+                );
+
+                VkRenderingInfoKHR renderingInfo = rendering_info_custom_size(
+                    0, nullptr, &depthAttachmentInfo, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION
+                );
+                vkCmdBeginRenderingKHR(cmdBuffer, &renderingInfo);
+
+                m_pShadowMapStage->Draw(cmdBuffer, m_GPUSceneDataBuffers[m_currentFrame].gpuAddress, m_sceneRenderMeshComponents);
+
+                vkCmdEndRenderingKHR(cmdBuffer);
+            }
+
+
 
             // Transition depth image to be written to in renderpass
             {
@@ -770,9 +729,6 @@ namespace MagicRed::Rendering
                     static_cast<std::uint32_t>(barriers.size()), barriers.data()
                 );
             }
-
-            PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdBeginRenderingKHR"));
-            PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_GfxDevice, "vkCmdEndRenderingKHR"));
 
             {
                 VkRenderingAttachmentInfoKHR albedoAttachmentInfo = rendering_attachment_info(
@@ -866,6 +822,27 @@ namespace MagicRed::Rendering
                     {},
                     0, nullptr, 0, nullptr,
                     1, &imb4
+                );
+            }
+
+            // Transition shadowmap depth image to sampled image
+            {
+                VkImageMemoryBarrier imb = create_image_memory_barrier(
+                    m_RenderTextureCache.get_render_texture(m_directionalShadowMapRTId).allocatedImage.image,
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    VK_ACCESS_SHADER_READ_BIT,
+                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_IMAGE_ASPECT_DEPTH_BIT
+                );
+                vkCmdPipelineBarrier(
+                    cmdBuffer,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    {},
+                    0, nullptr,
+                    0, nullptr,
+                    1, &imb
                 );
             }
 
@@ -1117,13 +1094,25 @@ namespace MagicRed::Rendering
             // {
             // if (m_sceneRenderMeshComponents.size() > 0)
             // {
-            // RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
-            //         glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
-            //         glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-            //         glm::mat4 scale = glm::scale(rotate, glm::vec3(1.0f, 1.0f, 1.0f));
-            //         renderMeshComponent.m_transformMatrix = scale;
+            RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
+                    glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 6.0f, 0.0f));
+                    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
+                    glm::mat4 scale = glm::scale(rotate, glm::vec3(2.0f, 2.0f, 2.0f));
+                    renderMeshComponent.m_transformMatrix = scale;
             // }
             // }
+            const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();
+            ImGui::Text("Number of GPU resident textures: %zu", fileToGuidMap->size());
+            if (ImGui::BeginChild("GPU Resident Textures", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar))
+            {
+                for (const auto& [filePath, guid] : *fileToGuidMap)
+                {
+                    ImGui::Text("File: %s", filePath.string().c_str());
+                    ImGui::SameLine();
+                    ImGui::Text("GUID: %s", guid.to_string().c_str());
+                }
+                ImGui::EndChild();
+            }
             ImGui::End();
             ImGui::Render();
             drawFrame();
@@ -1172,8 +1161,7 @@ namespace MagicRed::Rendering
         ImGui::DestroyContext();
         vkDestroyDescriptorPool(m_GfxDevice, m_imguiPool, nullptr);
 
-        vkDestroyDescriptorSetLayout(m_GfxDevice, m_bindlessDescriptorSetLayout, nullptr);
-        vkDestroyDescriptorPool(m_GfxDevice, m_bindlessPool, nullptr);
+        m_bindlessManager.Cleanup();
 
         m_materialDataBuffer.cleanup(m_GfxDevice.m_vmaAllocator);
 
@@ -1192,11 +1180,12 @@ namespace MagicRed::Rendering
 
         m_pLightingStage->Cleanup();
         m_pGbufferStage->Cleanup();
+        m_pShadowMapStage->Cleanup();
         vkDestroyDescriptorPool(m_GfxDevice, m_globalDescriptorPool, nullptr);
 
 
-        vkDestroySampler(m_GfxDevice, m_linearSampler, nullptr);
-        vkDestroySampler(m_GfxDevice, m_nearestSampler, nullptr);
+       vkDestroySampler(m_GfxDevice, m_linearSampler, nullptr);
+       vkDestroySampler(m_GfxDevice, m_shadowSampler, nullptr);
 
         m_RenderTextureCache.cleanup(m_GfxDevice);
         m_TextureCache.cleanup(m_GfxDevice);

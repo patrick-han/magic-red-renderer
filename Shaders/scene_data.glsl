@@ -27,16 +27,16 @@ layout (buffer_reference, scalar) readonly buffer PointLightsDataBuffer {
 
 layout (buffer_reference, scalar) readonly buffer SceneDataBuffer {
     // camera
-    mat4 view;
+    mat4 view;               
     mat4 projection;
-    // mat4 viewProjection;
-    vec3 cameraWorldPosition;
-
+    vec4 cameraWorldPosition;
+    
     PointLightsDataBuffer pointLights;
     int numPointLights;
     DirectionalLight directionalLight;
-
+    int padding;
     MaterialDataBuffer materials;
+    mat4 directionalLightViewProjection;
 };
 
 #endif // SCENE_DATA_GLSL

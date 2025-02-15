@@ -13,18 +13,13 @@ namespace MagicRed::Rendering
             , float linearAtten
             , float quadraticAtten
         );
-        glm::vec3 worldSpacePosition;
-        glm::vec3 ambient;
+
+        glm::vec3 worldSpacePosition;      
+        glm::vec3 ambient;      
         glm::vec3 diffuse;
         glm::vec3 specular;
-
-        struct AttenuationTerms
-        {
-            float constantAttenuation;
-            float linearAttenuation;
-            float quadraticAttenuation;
-        };
-
-        AttenuationTerms attenuationTerms;
+        float constantAttenuation;
+        float linearAttenuation;
+        float quadraticAttenuation;
     };
 }
