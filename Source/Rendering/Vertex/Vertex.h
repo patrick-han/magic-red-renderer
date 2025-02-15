@@ -1,16 +1,15 @@
 #pragma once
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-
+#include <Common/Math/Vector3f.h>
+#include <Common/Math/Vector4f.h>
 namespace MagicRed::Rendering
 {
     // https://github.com/eliasdaler/edbr/blob/master/edbr/include/edbr/Graphics/CPUMesh.h
     struct Vertex {
-        glm::vec3 position;
+        Vector3f position;
         float uv_x{};
-        glm::vec3 normal;
+        Vector3f normal;
         float uv_y{};
-        glm::vec4 tangent;
-        glm::vec4 color;
+        Vector4f tangent;
+        Vector4f color;
     };
 }

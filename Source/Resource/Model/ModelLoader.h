@@ -5,7 +5,6 @@
 #include <Rendering/Material/Material.h>
 #include <Resource/TextureLoader.h>
 #include <filesystem>
-#include <glm/mat4x4.hpp>
 #include <unordered_map>
 
 
@@ -15,6 +14,7 @@ struct aiNode;
 struct aiMaterial;
 struct aiString;
 #include <assimp/material.h>
+#include <Common/Math/Matrix4f.h>
 
 namespace MagicRed::Rendering
 {
@@ -61,8 +61,8 @@ namespace MagicRed::Resource
         std::unordered_map<unsigned int, MaterialId> m_sceneMaterialsAlreadyLoaded;
 
         void load_embedded_texture_data(const aiMaterial* material, const aiScene* scene, aiTextureType textureType, MagicRed::Rendering::GPUMaterial& meshMaterial);
-        void process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix);
-        void process_assimp_node(aiNode *node, const aiScene *scene, const glm::mat4x4& accumulateMatrix);
+        void process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const Matrix4f& transformMatrix);
+        void process_assimp_node(aiNode *node, const aiScene *scene, const Matrix4f& accumulateMatrix);
 
     };
 }

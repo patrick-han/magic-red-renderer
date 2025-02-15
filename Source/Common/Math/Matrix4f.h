@@ -1,7 +1,6 @@
 #pragma once
-
+#include "Vector3f.h"
 #include "Vector4f.h"
-#include "Math.h"
 
 namespace MagicRed {
 class Matrix4f {
@@ -67,11 +66,29 @@ public:
         );
     }
 
+    static Matrix4f MakeScale(const Vector3f& scale) {
+        return Matrix4f(
+              scale.x, 0.0f,    0.0f,    0.0f
+            , 0.0f,    scale.y, 0.0f,    0.0f
+            , 0.0f,    0.0f,    scale.z, 0.0f
+            , 0.0f,    0.0f,    0.0f,    1.0f
+        );
+    }
+
     static Matrix4f MakeTranslate(float tx, float ty, float tz) {
         return Matrix4f(
               1.0f, 0.0f, 0.0f, tx
             , 0.0f, 1.0f, 0.0f, ty
             , 0.0f, 0.0f, 1.0f, tz
+            , 0.0f, 0.0f, 0.0f, 1.0f
+        );
+    }
+
+    static Matrix4f MakeTranslate(const Vector3f& translate) {
+        return Matrix4f(
+              1.0f, 0.0f, 0.0f, translate.x
+            , 0.0f, 1.0f, 0.0f, translate.y
+            , 0.0f, 0.0f, 1.0f, translate.z
             , 0.0f, 0.0f, 0.0f, 1.0f
         );
     }
@@ -97,7 +114,7 @@ public:
             , 0.0f, 1.0f, 0.0f, 0.0f
             , -s,   0.0f, c,    0.0f
             , 0.0f, 0.0f, 0.0f, 1.0f
-        );
+        ); 
     }
     static Matrix4f MakeRotateZ(float rads) {
         float c = std::cos(rads);

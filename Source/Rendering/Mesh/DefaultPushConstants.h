@@ -1,13 +1,13 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
 #include <Common/IdTypes.h>
+#include <Common/Math/Matrix4f.h>
 
 namespace MagicRed::Rendering
 {
     struct DefaultPushConstants {
-        glm::mat4 model;
+        Matrix4f model;
         VkDeviceAddress sceneDataBufferAddress;
         MaterialId materialId;
 
@@ -22,7 +22,7 @@ namespace MagicRed::Rendering
     };
 
     struct ShadowMapPushConstants {
-        glm::mat4 model;
+        Matrix4f model;
         VkDeviceAddress sceneDataBufferAddress;
 
         static constexpr VkPushConstantRange range() {

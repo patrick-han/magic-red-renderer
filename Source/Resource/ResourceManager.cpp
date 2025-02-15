@@ -2,8 +2,6 @@
 #include <Resource/Model/ModelLoader.h>
 #include <Rendering/Mesh/Mesh.h>
 #include <Rendering/Core/Renderer.h>
-// #include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
 
 #include <External/json.hpp>
 #include <fstream>
@@ -11,6 +9,8 @@
 #include <Common/Compiler/Unused.h>
 #include <Resource/AssetMaker.h>
 #include <cassert>
+
+#include <Common/Math/Matrix4f.h>
 
 using json = nlohmann::json;
 
@@ -30,12 +30,13 @@ namespace MagicRed::Resource
         m_projectDirectory = projectDirectory;
     }
 
-    void ResourceManager::ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded, glm::vec3 translate, glm::vec3 scale) {
+    void ResourceManager::ImportModel(const std::filesystem::path& sourceLocalFilePath, bool texturesEmbedded, const Vector3f& translate, const Vector3f& scale) {
         std::filesystem::path sourceAbsoluteFilePath = m_projectDirectory / sourceLocalFilePath;
         CPUModelLoader cpuModelLoader(m_pRenderer, texturesEmbedded, sourceAbsoluteFilePath, m_fileToGuidMap);
         cpuModelLoader.LoadImmediately();
-        glm::mat4 translateMat = glm::translate(glm::mat4{ 1.0f }, translate);
-        glm::mat4 scaleMat = glm::scale(translateMat, scale);
+
+        Matrix4f translateMat = Matrix4f::MakeTranslate(translate);
+        Matrix4f scaleMat = Matrix4f::MakeScale(scale);
 
         assert(cpuModelLoader.m_cpuMeshes.size() == cpuModelLoader.m_meshMaterialIds.size());
         for (size_t i = 0; i < cpuModelLoader.m_cpuMeshes.size(); i++)

@@ -1,23 +1,23 @@
 #pragma once
 
-#include <glm/vec3.hpp>
-
+// #include <glm/vec3.hpp>
+#include <Common/Math/Vector3f.h>
 
 namespace MagicRed::Rendering
 {
     struct PointLight {
         PointLight(
-            glm::vec3 _worldSpacePosition
-            , glm::vec3 _color
+              const Vector3f& _worldSpacePosition
+            , const Vector3f& _color
             , float constantAtten
             , float linearAtten
             , float quadraticAtten
         );
 
-        glm::vec3 worldSpacePosition;      
-        glm::vec3 ambient;      
-        glm::vec3 diffuse;
-        glm::vec3 specular;
+        Vector3f worldSpacePosition;      
+        Vector3f ambient;      
+        Vector3f diffuse;
+        Vector3f specular;
         float constantAttenuation;
         float linearAttenuation;
         float quadraticAttenuation;

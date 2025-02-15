@@ -4,14 +4,14 @@
 #include <Common/IdTypes.h>
 #include <vector>
 #include <unordered_map>
-#include <glm/mat4x4.hpp>
+#include <Common/Math/Matrix4f.h>
 
 namespace MagicRed::Rendering
 {
     struct CPUMesh {
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
-        glm::mat4x4 m_transform{0.0};
+        Matrix4f m_transform;
         bool partiallyTransparentMaterial{false};
     };
 

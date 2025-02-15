@@ -1,13 +1,13 @@
 #pragma once
 
-#include <glm/vec3.hpp>
+#include <Common/Math/Vector3f.h>
 
 namespace MagicRed::Rendering
 {
     struct DirectionalLight {
         DirectionalLight();
-        DirectionalLight(glm::vec3 _direction, float _power);
-        glm::vec3 direction; // Defined as pointing _away_ from the light
+        DirectionalLight(const Vector3f& _direction, float _power);
+        Vector3f direction; // Defined as pointing _away_ from the light
         float power;
     };
     }

@@ -193,7 +193,7 @@ namespace MagicRed::Rendering
 
         // TODO: different push constants template, just using this for the sceneBuffer for now
         DefaultPushConstants pushConstants;
-        pushConstants.model = glm::mat4(0.0f);
+        pushConstants.model = Matrix4f();
         pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
         pushConstants.materialId = 0;
         vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstants), &pushConstants);

@@ -19,7 +19,7 @@
 #include <Common/RootDir.h>
 #include <Common/Platform.h>
 #include <Common/Compiler/Unused.h>
-
+#include <Common/Math/Vector3f.h>
 #include <Camera/Camera.h>
 #include <Common/Log.h>
 
@@ -113,8 +113,8 @@ namespace MagicRed::Rendering
 
 
         // Point lights
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, -4.0f), glm::vec3(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
-        m_CPUPointLights.emplace_back(glm::vec3(0.0f, 3.5f, 1.0f), glm::vec3(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(Vector3f(0.0f, 3.5f, -4.0f), Vector3f(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(Vector3f(0.0f, 3.5f, 1.0f), Vector3f(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
 
         if (m_CPUPointLights.size() > 0)
         {
@@ -189,98 +189,6 @@ namespace MagicRed::Rendering
             m_missingDiffuseTextureId = m_TextureCache.upload_texture(m_GfxDevice, textureLoadingData, m_missingDiffuseTextureGuid);
             stbi_image_free(data);
         }
-
-        // {
-        //     // Sponza mesh
-        //     MagicRed::Asset::CPUModel sponzaModel(ROOT_DIR "/Assets/Meshes/sponza-gltf/Sponza.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
-        //     glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, 0.0f));
-        //     //    glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(0.0, 0.0, 1.0));
-        //     glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(550.0f, 550.0f, 550.0f));
-        //     for (CPUMesh& mesh : sponzaModel.m_cpuMeshes)
-        //     {
-        //         GPUMeshId sponzaMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
-        //         m_sceneRenderMeshComponents.emplace_back(sponzaMeshId, m_MeshCache, translate * scale);
-        //     }
-        // }
-
-        // glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 2.0f, 2.0f));
-        // glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-        // glm::mat4 scale = glm::scale(rotate, glm::vec3(5.0f, 5.0f, 5.0f));
-        // UNUSED(scale);
-
-
-        // {
-        //     // A beautiful game
-        //     MagicRed::Asset::CPUModel beautifulGameModel(ROOT_DIR "/Assets/Meshes/ABeautifulGame/ABeautifulGame.gltf", false, m_MaterialCache, m_TextureCache, m_GfxDevice);
-        //     for (CPUMesh& mesh : beautifulGameModel.m_cpuMeshes)
-        //     {
-        //         GPUMeshId beautifulGameMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
-
-        //         // glm::vec3 scale;
-        //         // glm::quat rotation;
-        //         // glm::vec3 translation;
-        //         // glm::vec3 skew;
-        //         // glm::vec4 perspective;
-        //         // glm::decompose(mesh.m_transform, scale, rotation, translation, skew, perspective);
-
-        //         // Transform t = {
-        //         //     translation,
-        //         //     rotation,
-        //         //     scale * 5.0f
-        //         // };
-
-        //         // beautifulGameObject.set_transform(t.TransformMatrix());
-        //         // beautifulGameObject.set_transform(mesh.m_transform);
-        //         //beautifulGameObject.set_transform(glm::mat4(1.0f));
-        //         // m_sceneRenderMeshComponents.push_back(beautifulGameObject);
-        //         m_sceneRenderMeshComponents.emplace_back(beautifulGameMeshId, m_MeshCache, scale);
-        //     }
-        // }
-
-        //  {
-        //      // Orientation test model
-        //      CPUModel orientationTestModel(ROOT_DIR "/Assets/Meshes/OrientationTest.glb", true, m_MaterialCache, m_TextureCache, m_GfxDevice);
-        //      for (CPUMesh& mesh : orientationTestModel.m_cpuMeshes)
-        //      {
-        //         GPUMeshId orientationTestMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
-        //         RenderMeshComponent orientationTestObject(defaultPipelineId, orientationTestMeshId, m_GraphicsPipelineCache, m_MeshCache);
-
-        //         // glm::vec3 scale;
-        //         // glm::quat rotation;
-        //         // glm::vec3 translation;
-        //         // glm::vec3 skew;
-        //         // glm::vec4 perspective;
-        //         // glm::decompose(mesh.m_transform, scale, rotation, translation, skew, perspective);
-
-        //         // Transform t = {
-        //         //     translation + glm::vec3(0.f, 10.0f, 0.0f),
-        //         //     rotation,
-        //         //     scale * 0.5f
-        //         // };
-
-        //         // orientationTestObject.set_transform(t.TransformMatrix());
-        //         // orientationTestObject.set_transform(mesh.m_transform);
-        //         // orientationTestObject.set_transform(glm::mat4(1.0f));
-        //         orientationTestObject.set_transform(scale);
-        //         m_sceneRenderMeshComponents.push_back(orientationTestObject);
-        //      }
-        //  }
-
-        // {
-        //     // Helmet mesh
-        //     MagicRed::Asset::CPUModel helmetModel(ROOT_DIR "/Assets/Meshes/DamagedHelmet.glb", true, m_MaterialCache, m_TextureCache, m_GfxDevice);
-
-
-        //     for (CPUMesh& mesh : helmetModel.m_cpuMeshes)
-        //     {
-        //         GPUMeshId helmetMeshId = m_MeshCache.add_mesh(m_GfxDevice, mesh);
-
-        //         glm::mat4 helmetTransform = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 3.0f, 0.0f));
-        //         helmetTransform = glm::rotate(helmetTransform, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
-
-        //         m_sceneRenderMeshComponents.emplace_back(helmetMeshId, m_MeshCache, helmetTransform);
-        //     }
-        // }
     }
 
     void Renderer::update_material_data() {
@@ -554,12 +462,12 @@ namespace MagicRed::Rendering
         {
             int lightCircleRadius = 2;
             float lightCircleSpeed = 0.02f;
-            m_CPUPointLights[0].worldSpacePosition = glm::vec3(
+            m_CPUPointLights[0].worldSpacePosition = Vector3f(
                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
                0.0,
                lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
             );
-            m_CPUPointLights[1].worldSpacePosition = glm::vec3(
+            m_CPUPointLights[1].worldSpacePosition = Vector3f(
                 lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
                 1.0,
                 lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber)
@@ -586,7 +494,7 @@ namespace MagicRed::Rendering
         glm::mat4 directionalLightProjection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
         directionalLightProjection[1][1] *= -1;
         glm::mat4 directionalLightView = glm::lookAt(
-            m_directionalLight.direction, 
+            glm::vec3(m_directionalLight.direction.x, m_directionalLight.direction.y, m_directionalLight.direction.z),
             glm::vec3(0.0f, 0.0f, 0.0f), 
             glm::vec3(0.0f, 1.0f, 0.0f));
         m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
@@ -1088,49 +996,20 @@ namespace MagicRed::Rendering
             ImGui::SliderFloat("Directional Light z", &m_directionalLight.direction.z, -1.0f, 1.0f);
             ImGui::SliderFloat("Directional Light power", &m_directionalLight.power,  0.0f, 1.0f);
 
-            ImGui::SliderFloat("rx", &rx,  -1.0f, 1.0f);
-            ImGui::SliderFloat("ry", &ry,  -1.0f, 1.0f);
-            ImGui::SliderFloat("rz", &rz,  -1.0f, 1.0f);
+            ImGui::SliderFloat("rx", &rx,  -30.0f, 30.0f);
+            ImGui::SliderFloat("ry", &ry,  -30.0f, 30.0f);
+            ImGui::SliderFloat("rz", &rz,  -30.0f, 30.0f);
             ImGui::SliderFloat("rm", &rm,  2.0f * -3.14f, 2.0f *3.14f);
             // for (auto& renderMeshComponent : m_sceneRenderMeshComponents)
             // {
             // if (m_sceneRenderMeshComponents.size() > 0)
             // {
             RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
-                    // glm::mat4 translate = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 6.0f, 0.0f));
-                    // glm::mat4 rotate = glm::rotate(translate, rm, glm::vec3(rx, ry, rz));
-                    // glm::mat4 scale = glm::scale(rotate, glm::vec3(2.0f, 2.0f, 2.0f));
-                    // renderMeshComponent.m_transformMatrix = scale;
-
-                    
                     Matrix4f translate = Matrix4f::MakeTranslate(rx, ry, rz);
-                    Matrix4f rotate = Matrix4f::MakeRotateX(0.0f);
-                    Matrix4f scale = Matrix4f::MakeScale(rm);
+                    Matrix4f rotate = Matrix4f::MakeRotateX(rm);
+                    Matrix4f scale = Matrix4f::MakeScale(2.0f);
                     Matrix4f tr = translate * rotate * scale;
-
-                    // glm is column major tho
-                    glm::mat4 t(1.0f);
-                    t[0][0] = tr.m00;
-                    t[1][0] = tr.m01;
-                    t[2][0] = tr.m02;
-                    t[3][0] = tr.m03;
-
-                    t[0][1] = tr.m10;
-                    t[1][1] = tr.m11;
-                    t[2][1] = tr.m12;
-                    t[3][1] = tr.m13;
-
-                    t[0][2] = tr.m20;
-                    t[1][2] = tr.m21;
-                    t[2][2] = tr.m22;
-                    t[3][2] = tr.m23;
-
-                    t[0][3] = tr.m30;
-                    t[1][3] = tr.m31;
-                    t[2][3] = tr.m32;
-                    t[3][3] = tr.m33;
-
-                    renderMeshComponent.m_transformMatrix = t;
+                    renderMeshComponent.m_transformMatrix = tr; // glsl expects column major
             // }
             // }
             const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();

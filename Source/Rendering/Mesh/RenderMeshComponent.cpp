@@ -1,11 +1,10 @@
 #include <Rendering/Mesh/RenderMeshComponent.h>
 #include <vulkan/vulkan.h>
 #include <Rendering/Pipeline/GraphicsPipeline.h>
-#include <glm/glm.hpp>
 #include <Rendering/Mesh/MeshCache.h>
 namespace MagicRed::Rendering
 {
-    RenderMeshComponent::RenderMeshComponent(const GPUMeshId _GPUmeshId, const MeshCache& _meshCache, glm::mat4 _transformMatrix) :
+    RenderMeshComponent::RenderMeshComponent(const GPUMeshId _GPUmeshId, const MeshCache& _meshCache, Matrix4f _transformMatrix) :
         m_GPUmeshId(_GPUmeshId)
         , m_meshCache(_meshCache)
         , m_transformMatrix(_transformMatrix)

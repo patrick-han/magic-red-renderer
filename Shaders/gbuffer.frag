@@ -26,7 +26,7 @@ void main() {
     // Sample texture(s)
     MaterialData materialData = pushConstants.sceneData.materials.data[pushConstants.materialId];
 #if DEBUG_VERTEX_COLORS
-    vec3 diffuseTexColor = fragColor.rgb;
+    vec4 diffuseTexColor = vec4(fragColor.rgb, 1.0);
 #else
     vec4 diffuseTexColor = texture(sampler2D(textures[materialData.diffuseTex], linearSampler), textureCoords);
 #endif

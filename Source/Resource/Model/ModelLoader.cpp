@@ -28,13 +28,10 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 #include <assimp/postprocess.h>
 #include <assimp/matrix4x4.h>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-
 #include <Resource/GUID.h>
 
+#include <Common/Math/Vector3f.h>
+#include <Common/Math/Vector4f.h>
 
 namespace MagicRed::Resource
 {
@@ -67,19 +64,19 @@ namespace MagicRed::Resource
         };
     }
 
-    void CPUModelLoader::process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const glm::mat4x4& transformMatrix)
+    void CPUModelLoader::process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const Matrix4f& transformMatrix)
     {
         cpuMesh.m_transform = transformMatrix;
         for (size_t i = 0; i < mesh->mNumVertices; i++)
         {
             MagicRed::Rendering::Vertex vertex;
 
-            glm::vec4 worldSpaceVertex = transformMatrix * glm::vec4(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1.0f);
-            vertex.position = glm::vec3(worldSpaceVertex.x, worldSpaceVertex.y, worldSpaceVertex.z);
-            // vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-            vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+            Vector4f worldSpaceVertex = transformMatrix * Vector4f(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1.0f);
+            vertex.position = Vector3f(worldSpaceVertex.x, worldSpaceVertex.y, worldSpaceVertex.z);
+            // vertex.position = Vector3f(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            vertex.normal = Vector3f(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
             if (mesh->HasTangentsAndBitangents()) {
-                vertex.tangent = glm::vec4(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z, 0.0f);
+                vertex.tangent = Vector4f(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z, 0.0f);
             }
             if (mesh->HasTextureCoords(0)) {
                 vertex.uv_x = mesh->mTextureCoords[0][i].x;
@@ -87,7 +84,7 @@ namespace MagicRed::Resource
             }
 
             // TODO:
-            // vertex.tangent = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+            // vertex.tangent = Vector3f(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
             cpuMesh.m_vertices.emplace_back(vertex);
         }
         for (size_t i = 0; i < mesh->mNumFaces; i++)
@@ -119,14 +116,14 @@ namespace MagicRed::Resource
                 {
                     for (MagicRed::Rendering::Vertex& vertex : cpuMesh.m_vertices)
                     {
-                        vertex.color = glm::vec4(aiColor.r, aiColor.g, aiColor.b, aiColor.a);
+                        vertex.color = Vector4f(aiColor.r, aiColor.g, aiColor.b, aiColor.a);
                     }
                 }
                 else
                 {
                     for (MagicRed::Rendering::Vertex& vertex : cpuMesh.m_vertices)
                     {
-                        vertex.color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta fallback
+                        vertex.color = Vector4f(1.0f, 0.0f, 1.0f, 1.0f); // Magenta fallback
                     }
                 }
 
@@ -164,7 +161,7 @@ namespace MagicRed::Resource
                 //     aiColor4D baseColorFactor;
                 //     if(material->Get(AI_MATKEY_BASE_COLOR, baseColorFactor) == aiReturn_SUCCESS)
                 //     {
-                //         meshMaterial.baseColorFactor = glm::vec4(baseColorFactor.r, baseColorFactor.g, baseColorFactor.b, baseColorFactor.a);
+                //         meshMaterial.baseColorFactor = Vector4f(baseColorFactor.r, baseColorFactor.g, baseColorFactor.b, baseColorFactor.a);
                 //     }
                 // }
                 // {
@@ -185,7 +182,7 @@ namespace MagicRed::Resource
                 //     aiColor3D emissiveFactor;
                 //     if(material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveFactor) == aiReturn_SUCCESS)
                 //     {
-                //         meshMaterial.emissiveFactor = glm::vec3(emissiveFactor.r, emissiveFactor.g, emissiveFactor.b);
+                //         meshMaterial.emissiveFactor = Vector3f(emissiveFactor.r, emissiveFactor.g, emissiveFactor.b);
                 //     }
                 // }
 
@@ -247,7 +244,7 @@ namespace MagicRed::Resource
         // return cpuMesh;
     }
 
-    glm::mat4x4 convertAssimpMatrix(const aiMatrix4x4 &aiMat)
+    Matrix4f convertAssimpMatrix(const aiMatrix4x4 &aiMat)
     {
         return {
             aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
@@ -257,17 +254,17 @@ namespace MagicRed::Resource
         };
     }
 
-    void CPUModelLoader::process_assimp_node(aiNode *node, const aiScene *scene, const glm::mat4x4& accumulateMatrix)
+    void CPUModelLoader::process_assimp_node(aiNode *node, const aiScene *scene, const Matrix4f& accumulateMatrix)
     {
-        glm::mat4x4 transform = accumulateMatrix * convertAssimpMatrix(node->mTransformation);
+        Matrix4f transform = accumulateMatrix * convertAssimpMatrix(node->mTransformation); // TODO: not actually sure if this should be transposed lol
 
 
         // Decompose transform into its components
-        // glm::vec3 scale;
+        // Vector3f scale;
         // glm::quat orientation;
-        // glm::vec3 translation;
-        // glm::vec3 skew;
-        // glm::vec4 perspective;
+        // Vector3f translation;
+        // Vector3f skew;
+        // Vector4f perspective;
         // glm::decompose(convertAssimpMatrix(node->mTransformation), scale, orientation, translation, skew, perspective);
 
 
@@ -354,7 +351,7 @@ namespace MagicRed::Resource
         DebugPrintNodeHierarchy(scene->mRootNode);
 #endif
         
-        glm::mat4x4 rootTransform = convertAssimpMatrix(scene->mRootNode->mTransformation);
+        Matrix4f rootTransform = convertAssimpMatrix(scene->mRootNode->mTransformation);
         process_assimp_node(scene->mRootNode, scene, rootTransform);
     }
 }
