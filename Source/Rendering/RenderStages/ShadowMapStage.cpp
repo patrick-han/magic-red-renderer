@@ -37,10 +37,7 @@ namespace MagicRed::Rendering
         for(const RenderMeshComponent& renderMeshComponent : renderMeshComponents)
         {
             ShadowMapPushConstants pushConstants;
-            // TODO: Hack
-            Matrix4f blah = renderMeshComponent.m_transformMatrix;
-            blah = blah.Transpose();
-            pushConstants.model = blah;
+            pushConstants.model = renderMeshComponent.m_transformMatrix;
             pushConstants.sceneDataBufferAddress = sceneDataBufferAddress;
             vkCmdPushConstants(cmdBuffer, m_pipeline.GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConstants), &pushConstants);
 

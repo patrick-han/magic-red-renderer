@@ -244,13 +244,13 @@ namespace MagicRed::Resource
         // return cpuMesh;
     }
 
-    Matrix4f convertAssimpMatrix(const aiMatrix4x4 &aiMat)
-    {
+    // Assimp uses row major matrices as well
+    Matrix4f convertAssimpMatrix(const aiMatrix4x4 &aiMat) {
         return {
-            aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
-            aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
-            aiMat.a3, aiMat.b3, aiMat.c3, aiMat.d3,
-            aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
+            aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
+            aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
+            aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
+            aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
         };
     }
 
@@ -336,6 +336,7 @@ namespace MagicRed::Resource
                             | aiProcess_FlipUVs 
                             | aiProcess_CalcTangentSpace
                             | aiProcess_PreTransformVertices // Flattens all nodes and their relative transforms into a single node with "frozen: transforms
+            // TODO: don't really understand how this is working tbh
                             ;
         
         const aiScene* scene = importer.ReadFile(m_filePath.string(), flags);

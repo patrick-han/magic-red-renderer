@@ -6,7 +6,7 @@
 // Push constants block
 layout (push_constant) uniform PushConstants
 {
-    mat4 modelMatrix;
+    layout(row_major) mat4 modelMatrix;
     SceneDataBuffer sceneData;
     uint materialId;
 } pushConstants;

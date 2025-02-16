@@ -13,7 +13,7 @@ layout (location = 5) in vec4 vColor;
 
 layout (push_constant) uniform PushConstants
 {
-    mat4 modelMatrix;
+    layout(row_major) mat4 modelMatrix;
     SceneDataBuffer sceneData;
 } pushConstants;
 
