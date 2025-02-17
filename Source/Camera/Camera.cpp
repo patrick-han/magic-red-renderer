@@ -1,13 +1,14 @@
 #include "Camera.h"
+#include <Common/Math/Math.h>
 
 namespace MagicRed
 {
-    Camera::Camera(glm::vec3 _position, glm::vec3 _worldUp, glm::vec3 _front, float _yaw, float _pitch, float _fov, bool _allowMovement) :
+    Camera::Camera(Vector3f _position, Vector3f _worldUp, Vector3f _front, float _yaw, float _pitch, float _fov, bool _allowMovement) :
         m_position(_position),
-        m_worldUp(glm::normalize(_worldUp)),
-        m_forward(glm::normalize(_front)),
-        m_right(glm::normalize(glm::cross(m_forward, m_localUp))),
-        m_localUp(glm::normalize(glm::cross(m_right, m_forward))),
+        m_worldUp(_worldUp.AsNormalized()),
+        m_forward(_front.AsNormalized()),
+        m_right(Cross(m_forward, m_localUp).AsNormalized()),
+        m_localUp(Cross(m_right, m_forward).AsNormalized()),
         m_yaw(_yaw),
         m_pitch(_pitch),
         m_fov(_fov),
@@ -28,11 +29,11 @@ namespace MagicRed
             }
             if (direction == CameraMovementDirection::LEFT)
             {
-                m_position -= glm::normalize(glm::cross(m_forward, m_localUp)) * cameraSpeed;
+                m_position -= Cross(m_forward, m_localUp).AsNormalized() * cameraSpeed;
             }
             if (direction == CameraMovementDirection::RIGHT)
             {
-                m_position += glm::normalize(glm::cross(m_forward, m_localUp)) * cameraSpeed;
+                m_position += Cross(m_forward, m_localUp).AsNormalized() * cameraSpeed;
             }
             if (direction == CameraMovementDirection::UP)
             {
@@ -40,7 +41,7 @@ namespace MagicRed
             }
             if (direction == CameraMovementDirection::DOWN)
             {
-                m_position += cameraSpeed * -m_worldUp;
+                m_position += cameraSpeed * -1.0f * m_worldUp;
             }
         }
     }
@@ -82,15 +83,18 @@ namespace MagicRed
         }
     }
 
-    glm::mat4 Camera::get_view_matrix() 
+    Matrix4f Camera::get_view_matrix() 
     {
         // Return the view matrix which is just at lookAt matrix calculated from the cameras 3 main directional vectors
-        glm::mat4 view;
-        view = glm::lookAt(m_position, m_position + m_forward, m_localUp);
+        Matrix4f view;
+        glm::vec3 tempPos = glm::vec3(m_position.x, m_position.y, m_position.z);
+        glm::vec3 tempFwd = glm::vec3(m_forward.x, m_forward.y, m_forward.z);
+        glm::vec3 tempLocalUp = glm::vec3(m_localUp.x, m_localUp.y, m_localUp.z);
+        view = glmToMat4(glm::lookAt(tempPos, tempPos + tempFwd, tempLocalUp));
         return view;
     }
 
-    glm::vec3 Camera::get_world_position()
+    Vector3f Camera::get_world_position()
     {
         return m_position;
     }
@@ -109,13 +113,13 @@ namespace MagicRed
     void Camera::update_camera_vectors()
     {
         // Update the direction the camera is looking at based on the camera yaw and pitch
-        glm::vec3 direction; // Vector actually points towards camera from the looking position
-        direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-        direction.y = sin(glm::radians(m_pitch));
-        direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-        m_forward = glm::normalize(direction);
+        Vector3f direction; // Vector actually points towards camera from the looking position
+        direction.x = std::cos(deg2rad(m_yaw)) * std::cos(deg2rad(m_pitch));
+        direction.y = std::sin(deg2rad(m_pitch));
+        direction.z = std::sin(deg2rad(m_yaw)) * std::cos(deg2rad(m_pitch));
+        m_forward = direction.AsNormalized();
         // also re-calculate the right and up vector
-        m_right = glm::normalize(glm::cross(m_forward, m_worldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        m_localUp = glm::normalize(glm::cross(m_right, m_forward));
+        m_right = Cross(m_forward, m_worldUp).AsNormalized();  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+        m_localUp = Cross(m_right, m_forward).AsNormalized();
     }
 }

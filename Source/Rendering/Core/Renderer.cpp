@@ -48,9 +48,9 @@ namespace MagicRed::Rendering
     static uint64_t currentFrameTick = 0;
 
     // Camera
-    static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
-    static glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    static glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    static Vector3f cameraPos = Vector3f(0.0f, 0.0f, 0.0f);
+    static Vector3f worldUp = Vector3f(0.0f, 1.0f, 0.0f);
+    static Vector3f cameraFront = Vector3f(0.0f, 0.0f, -1.0f);
     static Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
     static float cameraSpeed = 0.0f;
 
@@ -485,25 +485,25 @@ namespace MagicRed::Rendering
 
     void Renderer::update_scene_data(uint32_t frameInFlightIndex) {
         m_CPUSceneData.view = camera.get_view_matrix();
-        glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f);
-        projection[1][1] *= -1; // flips the model because Vulkan uses positive Y downwards
+        Matrix4f projection = glmToMat4(glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f));
+        projection.m11 *= -1; // flips the model because Vulkan uses positive Y downwards
         m_CPUSceneData.projection = projection;
 
         float near_plane = -356.757f, far_plane = 167.567f;
         float ortho_size = 77.027f;  // Adjust based on your scene size
-        glm::mat4 directionalLightProjection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
-        directionalLightProjection[1][1] *= -1;
-        glm::mat4 directionalLightView = glm::lookAt(
+        Matrix4f directionalLightProjection = glmToMat4(glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane));
+        directionalLightProjection.m11 *= -1;
+        Matrix4f directionalLightView = glmToMat4(glm::lookAt(
             glm::vec3(m_directionalLight.direction.x, m_directionalLight.direction.y, m_directionalLight.direction.z),
             glm::vec3(0.0f, 0.0f, 0.0f), 
-            glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::vec3(0.0f, 1.0f, 0.0f)));
         m_CPUSceneData.directionalLightViewProjection = directionalLightProjection * directionalLightView;
 #if DEBUG_DIRECTIONAL_LIGHT
         m_CPUSceneData.view = directionalLightView;
         m_CPUSceneData.projection = directionalLightProjection;
 #endif
 
-        m_CPUSceneData.cameraWorldPosition = glm::vec4(camera.get_world_position(), 1.0f);
+        m_CPUSceneData.cameraWorldPosition = Vector4f(camera.get_world_position(), 1.0f);
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;
         m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
         m_CPUSceneData.directionalLight = m_directionalLight;

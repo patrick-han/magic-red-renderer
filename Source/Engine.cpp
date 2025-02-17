@@ -19,20 +19,6 @@ namespace MagicRed
         m_resourceManager.SetProjectDirectory(gameDirectory);
         m_renderer.SetResourceManager(&m_resourceManager);
 
-
-        Vector3f a(1.0f, 2.0f, 3.0f);
-
-        Vector3f b(3.0f, 2.0f, 1.0f);
-
-        Vector3f c = 3 * a;
-        Vector3f d = a * 3;
-
-        MRLOG(std::format("c: {}, {}, {}", c.x, c.y, c.z));
-        MRLOG(std::format("d: {}, {}, {}", d.x, d.y, d.z));
-
-        a = a.AsNormalized();
-        MRLOG(std::format("a: {}, {}, {}", a.x, a.y, a.z));
-        // exit(1);
         // Load Resources
          std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
          m_resourceManager.ImportModel(sponzaPath, false, Vector3f(0.0f, 0.0f, 0.0f), Vector3f(5.0f, 5.0f, 5.0f));

@@ -1,4 +1,7 @@
 #pragma once
+#include <Common/Math/Matrix4f.h>
+#include <Common/Math/Vector3f.h>
+#include <Common/Math/Matrix4f.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
@@ -14,19 +17,28 @@ namespace MagicRed
 		DOWN
 	};
 
+	inline Matrix4f glmToMat4(const glm::mat4& in) {
+        return Matrix4f(
+              in[0][0], in[1][0], in[2][0], in[3][0]
+            , in[0][1], in[1][1], in[2][1], in[3][1]
+            , in[0][2], in[1][2], in[2][2], in[3][2]
+            , in[0][3], in[1][3], in[2][3], in[3][3]
+        );
+    }
+
 	class Camera
 	{
-		glm::vec3 m_position;
-		glm::vec3 m_worldUp;
-		glm::vec3 m_forward;
-		glm::vec3 m_right;
-		glm::vec3 m_localUp;
+		Vector3f m_position;
+		Vector3f m_worldUp;
+		Vector3f m_forward;
+		Vector3f m_right;
+		Vector3f m_localUp;
 		float m_yaw;
 		float m_pitch;
 		float m_fov;
 		bool m_bAllowMovement;
 	public:
-		Camera(glm::vec3 _position, glm::vec3 _worldUp, glm::vec3 _front, float _yaw, float _pitch, float _fov, bool _allowMovement);
+		Camera(Vector3f _position, Vector3f _worldUp, Vector3f _front, float _yaw, float _pitch, float _fov, bool _allowMovement);
 
 		void process_keyboard_input(CameraMovementDirection direction, float cameraSpeed);
 
@@ -34,9 +46,9 @@ namespace MagicRed
 
 		void adjust_fov(float scrollOffset);
 
-		glm::mat4 get_view_matrix();
+		Matrix4f get_view_matrix();
 
-		glm::vec3 get_world_position();
+		Vector3f get_world_position();
 
 		void freeze_camera();
 

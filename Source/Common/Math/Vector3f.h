@@ -35,6 +35,18 @@ struct Vector3f {
         z -= c;
         return *this; 
     }
+    Vector3f& operator+=(const Vector3f& right) {
+        x += right.x;
+        y += right.y;
+        z += right.z;
+        return *this; 
+    }
+    Vector3f& operator-=(const Vector3f& right) {
+        x -= right.x;
+        y -= right.y;
+        z -= right.z;
+        return *this; 
+    }
     float Length() {
         return std::sqrt(x * x + y * y + z * z);
     }
