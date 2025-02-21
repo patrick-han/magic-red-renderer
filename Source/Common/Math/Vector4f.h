@@ -41,7 +41,7 @@ struct Vector4f {
         return *this; 
     }
     float Length() {
-        return std::sqrt(x * x + y * y + z * z + w * w);
+        return sqrt(x * x + y * y + z * z + w * w);
     }
     Vector4f AsNormalized();
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <vector>
 
 namespace MagicRed {
 
@@ -48,7 +49,7 @@ struct Vector3f {
         return *this; 
     }
     float Length() {
-        return std::sqrt(x * x + y * y + z * z);
+        return sqrt(x * x + y * y + z * z);
     }
     Vector3f AsNormalized();
 };
@@ -111,5 +112,43 @@ inline Vector3f Cross(const Vector3f& left, const Vector3f& right) {
     );
 }
 
+inline Vector3f Project(const Vector3f& a, const Vector3f& b) {
+    // a onto b
+    return (Dot(a, b) / Dot(b, b)) * b;
+}
+
+inline Vector3f Reject(const Vector3f& a, const Vector3f& b) {
+    return a - Project(a, b);
+}
+
+inline Vector3f ProjectNorm(const Vector3f& a, const Vector3f& b) {
+    // Assumes that b is normalized
+    return Dot(a, b) * b;
+}
+
+inline Vector3f RejectNorm(const Vector3f& a, const Vector3f& b) {
+    return a - ProjectNorm(a, b);
+}
+
+inline std::vector<Vector3f> GramSchmidt(const std::vector<Vector3f>& vlist, bool normalize) {
+    // Takes in a list of vectors (assumed to be linearly independent) and orthogonalizes them
+    std::vector<Vector3f> ulist;
+
+    for (size_t i = 0; i < vlist.size(); i++) {
+        Vector3f vsum = Vector3f(0.0f);
+        for (size_t k = 0; k < i; k++) {
+            vsum += Project(vlist[i], ulist[k]);
+        }
+        Vector3f u_i = vlist[i] - vsum;
+
+        ulist.push_back(u_i);
+    }
+
+    for (Vector3f& u : ulist) {
+        u = u.AsNormalized();
+    }
+
+    return ulist;
+}
 
 }
