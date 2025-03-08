@@ -1,48 +1,24 @@
 #pragma once
-#include <cmath>
 
 namespace MagicRed {
+
+struct Vector3f;
+
 // Column vector
 struct Vector4f {
     float x;
     float y;
     float z;
     float w;
-    Vector4f() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
-    Vector4f(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
-    Vector4f(float _v) : x(_v), y(_v), z(_v), w(_v) {}
-    Vector4f(const Vector3f& _vec, float _w) : x(_vec.x), y(_vec.y), z(_vec.z), w(_w) {}
-    Vector4f& operator*=(float c) {
-        x *= c;
-        y *= c;
-        z *= c;
-        w *= c;
-        return *this; 
-    }
-    Vector4f& operator/=(float c) {
-        x /= c;
-        y /= c;
-        z /= c;
-        w /= c;
-        return *this; 
-    }
-    Vector4f& operator+=(float c) {
-        x += c;
-        y += c;
-        z += c;
-        w += c;
-        return *this; 
-    }
-    Vector4f& operator-=(float c) {
-        x -= c;
-        y -= c;
-        z -= c;
-        w -= c;
-        return *this; 
-    }
-    float Length() {
-        return sqrt(x * x + y * y + z * z + w * w);
-    }
+    Vector4f();
+    Vector4f(float _x, float _y, float _z, float _w);
+    Vector4f(float _v);
+    Vector4f(const Vector3f& _vec, float _w);
+    Vector4f& operator*=(float c);
+    Vector4f& operator/=(float c);
+    Vector4f& operator+=(float c);
+    Vector4f& operator-=(float c);
+    float Length();
     Vector4f AsNormalized();
 };
 
@@ -89,12 +65,6 @@ inline Vector4f operator/ (const Vector4f& left, float div) {
     result.z = left.z / div;
     result.w = left.w / div;
     return result;
-}
-
-inline Vector4f Vector4f::AsNormalized() {
-    float mag = Length();
-    Vector4f ret = *this / mag;
-    return ret;
 }
 
 inline float Dot(const Vector4f& left, const Vector4f& right) {
