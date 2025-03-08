@@ -128,13 +128,36 @@ public:
         );
     }
 
-    Matrix4f Transpose() {
+    Matrix4f Transposed() {
         return Matrix4f(
               m00, m10, m20, m30
             , m01, m11, m21, m31
             , m02, m12, m22, m32
             , m03, m13, m23, m33
         );
+    }
+
+    // Inverse of a transform matrix assuming no deformation
+    // Mainly this can be used to compute the View matrix (world-to-camera) from the camera's world matrix (camera-to-world)
+    Matrix4f InvertedRigid() {
+        // Transpose the rotation matrix (upper-left 3×3 part)
+        float r00 = m00, r01 = m10, r02 = m20;
+        float r10 = m01, r11 = m11, r12 = m21;
+        float r20 = m02, r21 = m12, r22 = m22;
+
+        // Compute new translation: -R^T * t
+        float t0 = -(r00 * m03 + r01 * m13 + r02 * m23);
+        float t1 = -(r10 * m03 + r11 * m13 + r12 * m23);
+        float t2 = -(r20 * m03 + r21 * m13 + r22 * m23);
+
+        Matrix4f m;
+
+        // Assign transposed rotation
+        m.m00 = r00; m.m01 = r01; m.m02 = r02; m.m03 = t0;
+        m.m10 = r10; m.m11 = r11; m.m12 = r12; m.m13 = t1;
+        m.m20 = r20; m.m21 = r21; m.m22 = r22; m.m23 = t2;
+        m.m30 = 0.0f; m.m31 = 0.0f; m.m32 = 0.0f; m.m33 = 1.0f;
+        return m;
     }
 
     float Trace() {

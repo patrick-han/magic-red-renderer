@@ -144,8 +144,10 @@ inline std::vector<Vector3f> GramSchmidt(const std::vector<Vector3f>& vlist, boo
         ulist.push_back(u_i);
     }
 
-    for (Vector3f& u : ulist) {
-        u = u.AsNormalized();
+    if (normalize) {
+        for (Vector3f& u : ulist) {
+            u = u.AsNormalized();
+        }
     }
 
     return ulist;
