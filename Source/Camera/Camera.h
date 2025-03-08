@@ -40,19 +40,17 @@ namespace MagicRed
 	public:
 		Camera(Vector3f _position, Vector3f _worldUp, Vector3f _front, float _yaw, float _pitch, float _fov, bool _allowMovement);
 
-		void process_keyboard_input(CameraMovementDirection direction, float cameraSpeed);
+		void Move(CameraMovementDirection direction, float cameraSpeed);
 
-		void process_mouse_movement(float xoffset, float yoffset, bool constrainPitch);
+		void Rotate(float xoffset, float yoffset, bool constrainPitch);
 
-		void adjust_fov(float scrollOffset);
+		void AdjustFov(float scrollOffset);
 
 		Matrix4f GetView();
 		Matrix4f GetProjection(float fovY, float width, float height, float near, float far);
+		Vector3f GetWorldPosition();
 
-		Vector3f get_world_position();
-
-		void freeze_camera();
-
-		void unfreeze_camera();
+		void Freeze();
+		void Unfreeze();
 	};
 }

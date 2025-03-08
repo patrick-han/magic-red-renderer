@@ -17,7 +17,7 @@ namespace MagicRed
     {
     }
 
-    void Camera::process_keyboard_input(CameraMovementDirection direction, float cameraSpeed) 
+    void Camera::Move(CameraMovementDirection direction, float cameraSpeed) 
     {
         if(m_bAllowMovement) {
             if (direction == CameraMovementDirection::FORWARD)
@@ -47,7 +47,7 @@ namespace MagicRed
         }
     }
 
-    void Camera::adjust_fov(float scrollOffset) 
+    void Camera::AdjustFov(float scrollOffset) 
     {
         m_fov -= (float)scrollOffset;
         if (m_fov < 1.0f)
@@ -61,7 +61,7 @@ namespace MagicRed
         }
     }
 
-    void Camera::process_mouse_movement(float xoffset, float yoffset, bool constrainPitch)
+    void Camera::Rotate(float xoffset, float yoffset, bool constrainPitch)
     {
         if(m_bAllowMovement) 
         {
@@ -131,17 +131,17 @@ namespace MagicRed
         return projection * Matrix4f::MakeRotateX(deg2rad(-180.f));
     }
 
-    Vector3f Camera::get_world_position()
+    Vector3f Camera::GetWorldPosition()
     {
         return m_position;
     }
 
-    void Camera::freeze_camera() 
+    void Camera::Freeze() 
     {
         m_bAllowMovement = false;
     }
 
-    void Camera::unfreeze_camera() 
+    void Camera::Unfreeze() 
     {
         m_bAllowMovement = true;
     }

@@ -502,7 +502,7 @@ namespace MagicRed::Rendering
         m_CPUSceneData.projection = directionalLightProjection;
 #endif
 
-        m_CPUSceneData.cameraWorldPosition = Vector4f(camera.get_world_position(), 1.0f);
+        m_CPUSceneData.cameraWorldPosition = Vector4f(camera.GetWorldPosition(), 1.0f);
         m_CPUSceneData.lightBufferAddress = m_GPUPointLightsBuffers[frameInFlightIndex].gpuAddress;
         m_CPUSceneData.numPointLights = static_cast<int>(m_CPUPointLights.size());
         m_CPUSceneData.directionalLight = m_directionalLight;
@@ -955,10 +955,10 @@ namespace MagicRed::Rendering
                         m_bInteractableUI = !m_bInteractableUI;
                         if (m_bInteractableUI) {
                             SDL_SetRelativeMouseMode(SDL_FALSE);
-                            camera.freeze_camera();
+                            camera.Freeze();
                         } else {
                             SDL_SetRelativeMouseMode(SDL_TRUE);
-                            camera.unfreeze_camera();
+                            camera.Unfreeze();
                         }
                     }
                 }
@@ -970,7 +970,7 @@ namespace MagicRed::Rendering
                     const float sensitivity = 0.1f;
                     xoffset *= sensitivity;
                     yoffset *= sensitivity;
-                    camera.process_mouse_movement(xoffset, yoffset, true);
+                    camera.Rotate(xoffset, yoffset, true);
                 }
             }
             ImGui_ImplVulkan_NewFrame();
@@ -1049,22 +1049,22 @@ namespace MagicRed::Rendering
                 bQuit = true;
             }
             if (state[SDL_SCANCODE_W]) {
-                camera.process_keyboard_input(CameraMovementDirection::FORWARD, cameraSpeed * deltaTime);
+                camera.Move(CameraMovementDirection::FORWARD, cameraSpeed * deltaTime);
             }
             if (state[SDL_SCANCODE_S]) {
-                camera.process_keyboard_input(CameraMovementDirection::BACKWARD, cameraSpeed * deltaTime);
+                camera.Move(CameraMovementDirection::BACKWARD, cameraSpeed * deltaTime);
             }
             if (state[SDL_SCANCODE_A]) {
-                camera.process_keyboard_input(CameraMovementDirection::LEFT, cameraSpeed * deltaTime);
+                camera.Move(CameraMovementDirection::LEFT, cameraSpeed * deltaTime);
             }
             if (state[SDL_SCANCODE_D]) {
-                camera.process_keyboard_input(CameraMovementDirection::RIGHT, cameraSpeed * deltaTime);
+                camera.Move(CameraMovementDirection::RIGHT, cameraSpeed * deltaTime);
             }
             if (state[SDL_SCANCODE_SPACE]) {
-                camera.process_keyboard_input(CameraMovementDirection::UP, cameraSpeed * deltaTime);
+                camera.Move(CameraMovementDirection::UP, cameraSpeed * deltaTime);
             }
             if (state[SDL_SCANCODE_LCTRL]) {
-                camera.process_keyboard_input(CameraMovementDirection::DOWN, cameraSpeed * deltaTime);
+                camera.Move(CameraMovementDirection::DOWN, cameraSpeed * deltaTime);
             }
         }
     }
