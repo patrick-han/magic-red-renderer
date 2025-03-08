@@ -25,3 +25,6 @@
 [submodule "Dependencies/assimp"]
 	path = Dependencies/assimp
 	url = https://github.com/assimp/assimp
+[submodule "Source/Common/Math"]
+	path = Source/Common/Math
+	url = https://github.com/patrick-han/Math
