@@ -484,9 +484,8 @@ namespace MagicRed::Rendering
     }
 
     void Renderer::update_scene_data(uint32_t frameInFlightIndex) {
-        m_CPUSceneData.view = camera.get_view_matrix();
-        Matrix4f projection = glmToMat4(glm::perspective(glm::radians(70.f), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 200.0f));
-        projection.m11 *= -1; // flips the model because Vulkan uses positive Y downwards
+        m_CPUSceneData.view = camera.GetView();
+        Matrix4f projection = camera.GetProjection(70.f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.1f, 200.0f);
         m_CPUSceneData.projection = projection;
 
         float near_plane = -356.757f, far_plane = 167.567f;
@@ -991,6 +990,12 @@ namespace MagicRed::Rendering
                 }
                 ImGui::EndMenuBar();
             }
+            ImGui::Text("Camera");
+            ImGui::Text("Position: (%.3f, %.3f, %.3f)", camera.m_position.x, camera.m_position.y, camera.m_position.z);
+            ImGui::Text("Forward: (%.3f, %.3f, %.3f)", camera.m_forward.x, camera.m_forward.y, camera.m_forward.z);
+            ImGui::Text("Right: (%.3f, %.3f, %.3f)", camera.m_right.x, camera.m_right.y, camera.m_right.z);
+            ImGui::Text("Up: (%.3f, %.3f, %.3f)", camera.m_localUp.x, camera.m_localUp.y, camera.m_localUp.z);
+
             ImGui::SliderFloat("Directional Light x", &m_directionalLight.direction.x, -1.0f, 1.0f);
             ImGui::SliderFloat("Directional Light y", &m_directionalLight.direction.y, -1.0f, 1.0f);
             ImGui::SliderFloat("Directional Light z", &m_directionalLight.direction.z, -1.0f, 1.0f);

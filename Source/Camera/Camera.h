@@ -26,8 +26,8 @@ namespace MagicRed
         );
     }
 
-	class Camera
-	{
+	class Camera {
+	public:
 		Vector3f m_position;
 		Vector3f m_worldUp;
 		Vector3f m_forward;
@@ -46,15 +46,13 @@ namespace MagicRed
 
 		void adjust_fov(float scrollOffset);
 
-		Matrix4f get_view_matrix();
+		Matrix4f GetView();
+		Matrix4f GetProjection(float fovY, float width, float height, float near, float far);
 
 		Vector3f get_world_position();
 
 		void freeze_camera();
 
 		void unfreeze_camera();
-
-	private:
-		void update_camera_vectors();
 	};
 }
