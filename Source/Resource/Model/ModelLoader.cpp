@@ -30,6 +30,7 @@ DISABLE_CLANG_WARNING("-Wshorten-64-to-32")
 
 #include <Resource/GUID.h>
 
+#include <Common/Math/Math.h>
 #include <Common/Math/Vector3f.h>
 #include <Common/Math/Vector4f.h>
 
@@ -64,16 +65,29 @@ namespace MagicRed::Resource
         };
     }
 
+    // Assimp uses row major matrices as well
+    Matrix4f convertAssimpMatrix(const aiMatrix4x4 &aiMat) {
+        return {
+            aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
+            aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
+            aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
+            aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
+        };
+    }
+
     void CPUModelLoader::process_mesh(MagicRed::Rendering::CPUMesh& cpuMesh, MaterialId& meshMaterialId, aiMesh *mesh, const aiScene *scene, const Matrix4f& transformMatrix)
     {
         cpuMesh.m_transform = transformMatrix;
         for (size_t i = 0; i < mesh->mNumVertices; i++)
         {
             MagicRed::Rendering::Vertex vertex;
-
+            // Since we use right-handed +Z up, we need to do some conversion here.
+            // According to Assimp:
+            // By default the data is returned in a right-handed coordinate space (which
+            //     * OpenGL prefers). In this space, +X points to the right,
+            //     * +Z points towards the viewer, and +Y points upwards.
             Vector4f worldSpaceVertex = transformMatrix * Vector4f(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1.0f);
-            vertex.position = Vector3f(worldSpaceVertex.x, worldSpaceVertex.y, worldSpaceVertex.z);
-            // vertex.position = Vector3f(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            vertex.position = Vector3f(worldSpaceVertex.x, -worldSpaceVertex.z, worldSpaceVertex.y);
             vertex.normal = Vector3f(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
             if (mesh->HasTangentsAndBitangents()) {
                 vertex.tangent = Vector4f(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z, 0.0f);
@@ -242,16 +256,6 @@ namespace MagicRed::Resource
             }
         }
         // return cpuMesh;
-    }
-
-    // Assimp uses row major matrices as well
-    Matrix4f convertAssimpMatrix(const aiMatrix4x4 &aiMat) {
-        return {
-            aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
-            aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
-            aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
-            aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
-        };
     }
 
     void CPUModelLoader::process_assimp_node(aiNode *node, const aiScene *scene, const Matrix4f& accumulateMatrix)

@@ -38,7 +38,7 @@ namespace MagicRed
 		float m_fov;
 		bool m_bAllowMovement;
 	public:
-		Camera(Vector3f _position, Vector3f _worldUp, Vector3f _front, float _yaw, float _pitch, float _fov, bool _allowMovement);
+		Camera(Vector3f _position, Vector3f _worldUp, Vector3f _forward, float _fov);
 
 		void Move(CameraMovementDirection direction, float cameraSpeed);
 

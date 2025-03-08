@@ -195,7 +195,8 @@ void main() {
         result += calculatePointLightsContribution(i, sampledColor, sampledMetallicRoughness, sampledNormal, fragWorldPos.xyz);
     }
 
-    outColor = vec4(result, 1.0);
+    // outColor = vec4(result, 1.0);
+    outColor = vec4(sampledColor, 1.0);
     // outColor = vec4(fragWorldPos.xyz, 1.0);
     // outColor = vec4(sampledDepth, 0.0,0.0,1.0);
 }

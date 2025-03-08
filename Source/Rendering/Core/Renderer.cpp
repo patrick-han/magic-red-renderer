@@ -49,9 +49,9 @@ namespace MagicRed::Rendering
 
     // Camera
     static Vector3f cameraPos = Vector3f(0.0f, 0.0f, 0.0f);
-    static Vector3f worldUp = Vector3f(0.0f, 1.0f, 0.0f);
-    static Vector3f cameraFront = Vector3f(0.0f, 0.0f, -1.0f);
-    static Camera camera(cameraPos, worldUp, cameraFront, -90.0f, 0.0f, 45.0f, true);
+    static Vector3f worldUp = Vector3f(0.0f, 0.0f, 1.0f);
+    static Vector3f cameraForward = Vector3f(0.0f, 1.0f, 0.0f);
+    static Camera camera(cameraPos, worldUp, cameraForward, 45.0f);
     static float cameraSpeed = 0.0f;
 
     // Explicitly do nothing in the constructor/destructor so we can tightly control startup/shutdown behavior
@@ -113,8 +113,8 @@ namespace MagicRed::Rendering
 
 
         // Point lights
-        m_CPUPointLights.emplace_back(Vector3f(0.0f, 3.5f, -4.0f), Vector3f(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
-        m_CPUPointLights.emplace_back(Vector3f(0.0f, 3.5f, 1.0f), Vector3f(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(Vector3f(0.0f, -4.0f, 3.5f), Vector3f(1.0f, 10.0f/255.0f, 10.0f/255.0f), 1.0f, 0.09f, 0.032f);
+        m_CPUPointLights.emplace_back(Vector3f(0.0f, 1.0f, 3.5f), Vector3f(1.0f/255.0f, 1.0f/255.0f, 255.0f/255.0f), 1.0f, 0.09f, 0.032f);
 
         if (m_CPUPointLights.size() > 0)
         {
@@ -464,13 +464,13 @@ namespace MagicRed::Rendering
             float lightCircleSpeed = 0.02f;
             m_CPUPointLights[0].worldSpacePosition = Vector3f(
                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
-               0.0,
-               lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber)
+               lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
+               0.0
             );
             m_CPUPointLights[1].worldSpacePosition = Vector3f(
                 lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
-                1.0,
-                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber)
+                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
+                1.0
             );
 
 
@@ -943,6 +943,8 @@ namespace MagicRed::Rendering
         UNUSED(io);
         while (!bQuit) {
             // Handle events on queue
+            float xoff = 0.0f;
+            float yoff = 0.0f;
             while (SDL_PollEvent(&sdlEvent) != 0) {
                 ImGui_ImplSDL3_ProcessEvent(&sdlEvent);
                 if (sdlEvent.type == SDL_EVENT_QUIT) { // Built in Alt+F4 or hitting the 'x' button
@@ -967,6 +969,8 @@ namespace MagicRed::Rendering
                 if (sdlEvent.type == SDL_EVENT_MOUSE_MOTION) {
                     float xoffset = sdlEvent.motion.xrel;
                     float yoffset =  -sdlEvent.motion.yrel;
+                    xoff = xoffset;
+                    yoff = yoffset;
                     const float sensitivity = 0.1f;
                     xoffset *= sensitivity;
                     yoffset *= sensitivity;
@@ -995,6 +999,10 @@ namespace MagicRed::Rendering
             ImGui::Text("Forward: (%.3f, %.3f, %.3f)", camera.m_forward.x, camera.m_forward.y, camera.m_forward.z);
             ImGui::Text("Right: (%.3f, %.3f, %.3f)", camera.m_right.x, camera.m_right.y, camera.m_right.z);
             ImGui::Text("Up: (%.3f, %.3f, %.3f)", camera.m_localUp.x, camera.m_localUp.y, camera.m_localUp.z);
+            ImGui::Text("Yaw: %.3f", camera.m_yaw);
+            ImGui::Text("Pitch: %.3f", camera.m_pitch);
+            ImGui::Text("Mouse");
+            ImGui::Text("X and Y Offsets: (%.3f, %.3f)", xoff, yoff);
 
             ImGui::SliderFloat("Directional Light x", &m_directionalLight.direction.x, -1.0f, 1.0f);
             ImGui::SliderFloat("Directional Light y", &m_directionalLight.direction.y, -1.0f, 1.0f);
@@ -1018,6 +1026,15 @@ namespace MagicRed::Rendering
             // }
             // }
             const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();
+            ImGui::Text("Number of GPU resident meshes: %zu", m_sceneRenderMeshComponents.size());
+            if (ImGui::BeginChild("GPU Resident Meshes", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar))
+            {
+                for (const auto& renderMesh : m_sceneRenderMeshComponents)
+                {
+                    ImGui::Text("MaterialId: %d", renderMesh.m_materialId);
+                }
+                ImGui::EndChild();
+            }
             ImGui::Text("Number of GPU resident textures: %zu", fileToGuidMap->size());
             if (ImGui::BeginChild("GPU Resident Textures", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar))
             {

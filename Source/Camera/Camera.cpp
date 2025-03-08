@@ -4,16 +4,16 @@
 
 namespace MagicRed
 {
-    Camera::Camera(Vector3f _position, Vector3f _worldUp, Vector3f _front, float _yaw, float _pitch, float _fov, bool _allowMovement) :
+    Camera::Camera(Vector3f _position, Vector3f _worldUp, Vector3f _forward, float _fov) :
         m_position(_position),
         m_worldUp(_worldUp.AsNormalized()),
-        m_forward(_front.AsNormalized()),
-        m_right(Cross(m_forward, m_localUp).AsNormalized()),
+        m_forward(_forward.AsNormalized()),
+        m_right(Cross(m_forward, m_worldUp).AsNormalized()),
         m_localUp(Cross(m_right, m_forward).AsNormalized()),
-        m_yaw(_yaw),
-        m_pitch(_pitch),
+        m_yaw(90.0f),
+        m_pitch(0.0f),
         m_fov(_fov),
-        m_bAllowMovement(_allowMovement)
+        m_bAllowMovement(true)
     {
     }
 
@@ -30,11 +30,11 @@ namespace MagicRed
             }
             if (direction == CameraMovementDirection::LEFT)
             {
-                m_position -= Cross(m_forward, m_localUp).AsNormalized() * cameraSpeed;
+                m_position -= cameraSpeed * m_right;
             }
             if (direction == CameraMovementDirection::RIGHT)
             {
-                m_position += Cross(m_forward, m_localUp).AsNormalized() * cameraSpeed;
+                m_position += cameraSpeed * m_right;
             }
             if (direction == CameraMovementDirection::UP)
             {
@@ -42,7 +42,7 @@ namespace MagicRed
             }
             if (direction == CameraMovementDirection::DOWN)
             {
-                m_position += cameraSpeed * -1.0f * m_worldUp;
+                m_position -= cameraSpeed * m_worldUp;
             }
         }
     }
@@ -65,13 +65,14 @@ namespace MagicRed
     {
         if(m_bAllowMovement) 
         {
-            // Update camera pitch and yaw based on mouse offsets calculated in the mouse callback
-            m_yaw += xoffset;
+            // Moving the mouse left results in a negative offset. We want a left mouse movement to be a CCW rotation when viewed from above according to RHR.
+            // Subtracting a negative results in a positive increase (positive angle is CCW)
+            m_yaw -= xoffset;
             m_pitch += yoffset;
 
             if (constrainPitch) 
             {
-                if (m_pitch > 89.0f) // Prevent weird flipping when looking at exactly 90 degrees (messes with lookat)
+                if (m_pitch > 89.0f) // +90 is looking straight up
                 {
                     m_pitch = 89.0f;
                 }
@@ -81,10 +82,10 @@ namespace MagicRed
                 }
             }
             // Update the direction the camera is looking at based on the camera yaw and pitch
-            Vector3f direction; // Vector actually points towards camera from the looking position
+            Vector3f direction;
             direction.x = std::cos(deg2rad(m_yaw)) * std::cos(deg2rad(m_pitch));
-            direction.y = std::sin(deg2rad(m_pitch));
-            direction.z = std::sin(deg2rad(m_yaw)) * std::cos(deg2rad(m_pitch));
+            direction.y = std::sin(deg2rad(m_yaw)) * std::cos(deg2rad(m_pitch));
+            direction.z = std::sin(deg2rad(m_pitch));
             m_forward = direction.AsNormalized();
             // also re-calculate the right and up vector
             m_right = Cross(m_forward, m_worldUp).AsNormalized();  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
@@ -104,11 +105,11 @@ namespace MagicRed
 
 
         Matrix4f view2 = Matrix4f(
-              m_right.x, m_localUp.x, -m_forward.x, m_position.x
-            , m_right.y, m_localUp.y, -m_forward.y, m_position.y
-            , m_right.z, m_localUp.z, -m_forward.z, m_position.z
-            , 0.0f, 0.0f, 0.0f, 1.0f
-        ).InvertedRigid();
+            m_right.x, m_forward.x, m_localUp.x, m_position.x
+          , m_right.y, m_forward.y, m_localUp.y, m_position.y
+          , m_right.z, m_forward.z, m_localUp.z, m_position.z
+          , 0.0f, 0.0f, 0.0f, 1.0f
+      ).InvertedRigid();
 
         return view2;
     }
@@ -128,7 +129,11 @@ namespace MagicRed
 
         // Flips from view space +Z towards the viewer, +X right, +Y up to clip space +Z away, +X right, +Y down
         // Essentially a 180 degree CW rotation about +X
-        return projection * Matrix4f::MakeRotateX(deg2rad(-180.f));
+        // return projection * Matrix4f::MakeRotateX(deg2rad(-180.f));
+
+        // Rotates view space +Y away from the viewer, +X right, +Z up to clip space +Z away, +X right, +Y down
+        // Essentially a 90 degree CW rotation about +X
+        return projection * Matrix4f::MakeRotateX(deg2rad(90.f)); // I would think this should be -90 but only +90 gives me the right result...
     }
 
     Vector3f Camera::GetWorldPosition()

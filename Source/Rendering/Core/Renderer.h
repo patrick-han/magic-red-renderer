@@ -129,9 +129,9 @@ namespace MagicRed::Rendering
         std::unique_ptr<BlinnPhongLightingStage> m_pLightingStage;
 
         float rx {0.0f};
-        float ry {1.0f};
+        float ry {0.0f};
         float rz {0.0f};
-        float rm {3.14f * 3.0f / 2.0f};
+        float rm {0.0f};
 
         void initWindow();
         void init_graphics();
