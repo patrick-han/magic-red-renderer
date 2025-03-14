@@ -51,7 +51,7 @@ namespace MagicRed::Rendering
     static Vector3f cameraPos = Vector3f(0.0f, 0.0f, 0.0f);
     static Vector3f worldUp = Vector3f(0.0f, 0.0f, 1.0f);
     static Vector3f cameraForward = Vector3f(0.0f, 1.0f, 0.0f);
-    static Camera camera(cameraPos, worldUp, cameraForward, 45.0f);
+    static Camera camera(cameraPos, worldUp, cameraForward, 70.0f);
     static float cameraSpeed = 0.0f;
 
     // Explicitly do nothing in the constructor/destructor so we can tightly control startup/shutdown behavior
@@ -463,13 +463,13 @@ namespace MagicRed::Rendering
             int lightCircleRadius = 2;
             float lightCircleSpeed = 0.02f;
             m_CPUPointLights[0].worldSpacePosition = Vector3f(
-               lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
-               lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
+               lightCircleRadius * std::cosf(lightCircleSpeed * frameNumber),
+               lightCircleRadius * std::sinf(lightCircleSpeed * frameNumber),
                0.0
             );
             m_CPUPointLights[1].worldSpacePosition = Vector3f(
-                lightCircleRadius * glm::sin(lightCircleSpeed * frameNumber),
-                lightCircleRadius * glm::cos(lightCircleSpeed * frameNumber),
+                lightCircleRadius * std::sinf(lightCircleSpeed * frameNumber),
+                lightCircleRadius * std::cosf(lightCircleSpeed * frameNumber),
                 1.0
             );
 
@@ -485,7 +485,7 @@ namespace MagicRed::Rendering
 
     void Renderer::update_scene_data(uint32_t frameInFlightIndex) {
         m_CPUSceneData.view = camera.GetView();
-        Matrix4f projection = camera.GetProjection(70.f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.1f, 200.0f);
+        Matrix4f projection = camera.GetProjection((float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.1f, 200.0f);
         m_CPUSceneData.projection = projection;
 
         float near_plane = -356.757f, far_plane = 167.567f;
@@ -976,6 +976,11 @@ namespace MagicRed::Rendering
                     yoffset *= sensitivity;
                     camera.Rotate(xoffset, yoffset, true);
                 }
+
+                if (sdlEvent.type == SDL_EVENT_MOUSE_WHEEL) {
+                    float scrollOffset = sdlEvent.wheel.y;
+                    camera.AdjustFov(scrollOffset);
+                }
             }
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplSDL3_NewFrame();
@@ -1013,18 +1018,14 @@ namespace MagicRed::Rendering
             ImGui::SliderFloat("ry", &ry,  -30.0f, 30.0f);
             ImGui::SliderFloat("rz", &rz,  -30.0f, 30.0f);
             ImGui::SliderFloat("rm", &rm,  2.0f * -3.14f, 2.0f *3.14f);
-            // for (auto& renderMeshComponent : m_sceneRenderMeshComponents)
-            // {
-            // if (m_sceneRenderMeshComponents.size() > 0)
-            // {
-            RenderMeshComponent& renderMeshComponent = m_sceneRenderMeshComponents.back();
-                    Matrix4f translate = Matrix4f::MakeTranslate(rx, ry, rz);
-                    Matrix4f rotate = Matrix4f::MakeRotateX(rm);
-                    Matrix4f scale = Matrix4f::MakeScale(2.0f);
-                    Matrix4f tr = translate * rotate * scale;
-                    renderMeshComponent.m_transformMatrix = tr; // glsl expects column major
-            // }
-            // }
+
+            RenderMeshComponent& rmc = m_sceneRenderMeshComponents.back();
+            Matrix4f translate = Matrix4f::MakeTranslate(rx, ry, rz);
+            Matrix4f rotate = Matrix4f::MakeRotateX(rm);
+            Matrix4f scale = Matrix4f::MakeScale(rmc.m_transformMatrix.m00); // Assumes uniform scale
+            Matrix4f tr = translate * rotate * scale;
+            rmc.m_transformMatrix = tr;
+
             const std::unordered_map<std::filesystem::path, MagicRed::Resource::GUID>* fileToGuidMap = m_pResourceManager->GetFileToGuidMap();
             ImGui::Text("Number of GPU resident meshes: %zu", m_sceneRenderMeshComponents.size());
             if (ImGui::BeginChild("GPU Resident Meshes", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar))

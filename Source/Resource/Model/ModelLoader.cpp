@@ -262,16 +262,6 @@ namespace MagicRed::Resource
     {
         Matrix4f transform = accumulateMatrix * convertAssimpMatrix(node->mTransformation); // TODO: not actually sure if this should be transposed lol
 
-
-        // Decompose transform into its components
-        // Vector3f scale;
-        // glm::quat orientation;
-        // Vector3f translation;
-        // Vector3f skew;
-        // Vector4f perspective;
-        // glm::decompose(convertAssimpMatrix(node->mTransformation), scale, orientation, translation, skew, perspective);
-
-
         // Process this node's meshes
         for (size_t i = 0; i < node->mNumMeshes; i++)
         {

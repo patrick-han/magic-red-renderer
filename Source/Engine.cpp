@@ -21,19 +21,19 @@ namespace MagicRed
 
         // Load Resources
          std::filesystem::path sponzaPath("sponza-gltf/Sponza.gltf");
-         m_resourceManager.ImportModel(sponzaPath, false, Vector3f(0.0f, 0.0f, 0.0f), Vector3f(5.0f, 5.0f, 5.0f));
+         m_resourceManager.ImportModel(sponzaPath, false, Vector3f(0.0f, 0.0f, 0.0f), Vector3f(1.0f));
 
-        //std::filesystem::path beautifulGamePath("ABeautifulGame/ABeautifulGame.gltf");
-        //m_resourceManager.ImportModel(beautifulGamePath, false, Vector3f(5.0f, 6.0f, 0.0f), Vector3f(2.0f, 2.0f, 2.0f));
+        // std::filesystem::path beautifulGamePath("ABeautifulGame/ABeautifulGame.gltf");
+        // m_resourceManager.ImportModel(beautifulGamePath, false, Vector3f(5.0f, 6.0f, 10.0f), Vector3f(2.0f, 2.0f, 2.0f));
 
-        std::filesystem::path orientationTestPath("OrientationTest.glb");
-        m_resourceManager.ImportModel(orientationTestPath, true, Vector3f(0.0f, 0.0f, 2.0f), Vector3f(0.25f, 0.25f, 0.25f));
+        // std::filesystem::path orientationTestPath("OrientationTest.glb");
+        // m_resourceManager.ImportModel(orientationTestPath, true, Vector3f(0.0f, 0.0f, 10.0f), Vector3f(0.25f, 0.25f, 0.25f));
 
         // std::filesystem::path helmetPath("damagedHelmet-glb/DamagedHelmet.glb");
         // m_resourceManager.ImportModel(helmetPath, true, Vector3f(0.0f, 6.0f, 0.0f), Vector3f(2.0f, 2.0f, 2.0f));
 
         std::filesystem::path helmetGltfPath("damagedHelmet-gltf/DamagedHelmet.gltf");
-        m_resourceManager.ImportModel(helmetGltfPath, false, Vector3f(0.0f, 0.0f, 0.0f), Vector3f(2.0f, 2.0f, 2.0f));
+        m_resourceManager.ImportModel(helmetGltfPath, false, Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.5f));
 
 
         m_renderer.run();

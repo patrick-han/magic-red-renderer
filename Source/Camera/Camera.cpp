@@ -4,7 +4,7 @@
 
 namespace MagicRed
 {
-    Camera::Camera(Vector3f _position, Vector3f _worldUp, Vector3f _forward, float _fov) :
+    Camera::Camera(Vector3f _position, Vector3f _worldUp, Vector3f _forward, float _fovY) :
         m_position(_position),
         m_worldUp(_worldUp.AsNormalized()),
         m_forward(_forward.AsNormalized()),
@@ -12,7 +12,7 @@ namespace MagicRed
         m_localUp(Cross(m_right, m_forward).AsNormalized()),
         m_yaw(90.0f),
         m_pitch(0.0f),
-        m_fov(_fov),
+        m_fovY(_fovY),
         m_bAllowMovement(true)
     {
     }
@@ -49,15 +49,15 @@ namespace MagicRed
 
     void Camera::AdjustFov(float scrollOffset) 
     {
-        m_fov -= (float)scrollOffset;
-        if (m_fov < 1.0f)
+        m_fovY -= (float)scrollOffset;
+        if (m_fovY < 1.0f)
         {
-            m_fov = 1.0f;
+            m_fovY = 1.0f;
         }
 
-        if (m_fov > 45.0f)
+        if (m_fovY > 120.0f)
         {
-            m_fov = 45.0f;
+            m_fovY = 120.0f;
         }
     }
 
@@ -114,9 +114,9 @@ namespace MagicRed
         return view2;
     }
 
-    Matrix4f Camera::GetProjection(float fovY, float width, float height, float near, float far) {
+    Matrix4f Camera::GetProjection(float width, float height, float near, float far) {
         float aspectRatio = width / height;
-        float tanHalfFovy = std::tanf(deg2rad(fovY) / 2.0f);
+        float tanHalfFovy = std::tanf(deg2rad(m_fovY) / 2.0f);
         (void)(far);
         // Projection matrix for a view space already in the same orientation as Vulkan clip space (+Z away, +X right, +Y down)
         Matrix4f projection = Matrix4f(
