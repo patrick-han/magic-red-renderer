@@ -35,10 +35,10 @@ namespace MagicRed
 		Vector3f m_localUp;
 		float m_yaw;
 		float m_pitch;
-		float m_fov;
+		float m_fovY;
 		bool m_bAllowMovement;
 	public:
-		Camera(Vector3f _position, Vector3f _worldUp, Vector3f _forward, float _fov);
+		Camera(Vector3f _position, Vector3f _worldUp, Vector3f _forward, float _fovY);
 
 		void Move(CameraMovementDirection direction, float cameraSpeed);
 
@@ -47,7 +47,7 @@ namespace MagicRed
 		void AdjustFov(float scrollOffset);
 
 		Matrix4f GetView();
-		Matrix4f GetProjection(float fovY, float width, float height, float near, float far);
+		Matrix4f GetProjection(float width, float height, float near, float far);
 		Vector3f GetWorldPosition();
 
 		void Freeze();
