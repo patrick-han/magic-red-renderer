@@ -1,4 +1,4 @@
-# Magic Red
+# Magic Red Renderer
 Magic Red is a cross-platform 3D rendering engine built on top of Vulkan.
 
 # Requirements
