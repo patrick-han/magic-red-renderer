@@ -95,23 +95,15 @@ namespace MagicRed
 
     Matrix4f Camera::GetView() 
     {
-        auto glm2Vec3 = [](const Vector3f& v) -> glm::vec3 { return glm::vec3(v.x, v.y, v.z); };
-        // Return the view matrix which is just at lookAt matrix calculated from the cameras 3 main directional vectors
-        // Matrix4f view = glmToMat4(glm::lookAt(
-        //       glm2Vec3(m_position)
-        //     , glm2Vec3(m_position + m_forward)
-        //     , glm2Vec3(m_localUp)
-        // ));
 
-
-        Matrix4f view2 = Matrix4f(
+        Matrix4f view = Matrix4f(
             m_right.x, m_forward.x, m_localUp.x, m_position.x
           , m_right.y, m_forward.y, m_localUp.y, m_position.y
           , m_right.z, m_forward.z, m_localUp.z, m_position.z
           , 0.0f, 0.0f, 0.0f, 1.0f
       ).InvertedRigid();
 
-        return view2;
+        return view;
     }
 
     Matrix4f Camera::GetProjection(float width, float height, float near, float far) {
